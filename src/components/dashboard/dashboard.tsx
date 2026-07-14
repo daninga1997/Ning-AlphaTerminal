@@ -1,0 +1,30 @@
+import type { StockAnalysis } from "@/types/stock";
+import { getDemoOpportunities, getTopStocks } from "../../lib/stock-ranking";
+import { DashboardAssistant } from "./dashboard-assistant";
+import { getHotSectors } from "./dashboard-view-model";
+import { HotSectors } from "./hot-sectors";
+import { MarketOverview } from "./market-overview";
+import { QuickWatchlist } from "./quick-watchlist";
+import { TodayDecision } from "./today-decision";
+import { TodayWatch } from "./today-watch";
+
+export { DashboardAssistant };
+
+export function Dashboard({ stocks }: { stocks: StockAnalysis[] }) {
+  const opportunities = getDemoOpportunities(stocks);
+  const hotSectors = getHotSectors(stocks);
+  const topStocks = getTopStocks(stocks, "totalScore", 10);
+  const aLevelStock = opportunities.aLevel[0];
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+      <MarketOverview stocks={stocks} />
+      <TodayDecision stock={aLevelStock} />
+      <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <TodayWatch stocks={opportunities.bLevel} />
+        <HotSectors sectors={hotSectors} />
+      </div>
+      <QuickWatchlist stocks={topStocks} />
+    </div>
+  );
+}

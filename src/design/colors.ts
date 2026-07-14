@@ -1,0 +1,45 @@
+export const primitiveColors = {
+  neutral0: '#090A0D',
+  neutral50: '#0D0F14',
+  neutral100: '#111318',
+  neutral150: '#171C24',
+  neutral200: '#1A1F27',
+  neutral250: '#1D2633',
+  neutral300: '#252A33',
+  neutral400: '#394150',
+  neutral500: '#586174',
+  neutral600: '#8B95A7',
+  neutral700: '#B6C0CF',
+  neutral800: '#DCE4F0',
+  neutral900: '#F4F7FB',
+  blue400: '#7AA7FF',
+  blue500: '#4F8CFF',
+  blue600: '#2F6FE8',
+  green500: '#22C55E',
+  green600: '#16A34A',
+  amber500: '#F59E0B',
+  amber600: '#D97706',
+  red500: '#EF4444',
+  red600: '#DC2626',
+} as const;
+
+export const colors = {
+  primary: primitiveColors.blue500,
+  success: primitiveColors.green500,
+  warning: primitiveColors.amber500,
+  danger: primitiveColors.red500,
+  background: primitiveColors.neutral0,
+  surface: primitiveColors.neutral50,
+  card: primitiveColors.neutral100,
+  border: primitiveColors.neutral300,
+  text: primitiveColors.neutral900,
+  secondaryText: primitiveColors.neutral600,
+  mutedText: primitiveColors.neutral500,
+  divider: primitiveColors.neutral200,
+  hover: primitiveColors.neutral150,
+  active: primitiveColors.neutral250,
+  focus: primitiveColors.blue400,
+} as const;
+
+export type PrimitiveColorToken = keyof typeof primitiveColors;
+export type ColorToken = keyof typeof colors;

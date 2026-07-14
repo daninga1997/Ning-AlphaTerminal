@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanType {
+  short_term
+  swing
+  mid_term
+}
+
+enum TradingPlanStatus {
+  draft
+  active
+  triggered
+  cancelled
+  invalidated
+  completed
+  expired
+}
+
+enum PlanSignal {
+  buy
+  wait
+  hold
+  reduce
+  avoid
+}
+
+enum PlanEventType {
+  created
+  activated
+  entry_zone_touched
+  chase_limit_exceeded
+  stop_loss_broken
+  first_target_reached
+  second_target_reached
+  signal_changed
+  data_became_stale
+  data_unavailable
+  cancelled
+  invalidated
+  completed
+  manual_note
+}
+
+enum ReviewOutcome {
+  not_triggered
+  cancelled
+  stopped_out
+  first_target
+  second_target
+  manual_exit
+  expired
+  open
+}
+
+model TradingPlan {
+  id                       String            @id @default(cuid())
+  idempotencyKey           String            @unique
+  planDate                 String
+  code                     String
+  name                     String
+  sector                   String
+  planType                 PlanType
+  status                   TradingPlanStatus
+  originalSignal           PlanSignal
+  finalSignal              PlanSignal
+  shortTermScore           Int
+  midTermScore             Int
+  totalScore               Int
+  firstEntryLow            Float
+  firstEntryHigh           Float
+  secondEntryLow           Float
+  secondEntryHigh          Float
+  chaseLimit               Float
+  stopLoss                 Float
+  firstTarget              Float
+  secondTarget             Float
+  riskRewardRatio          Float
+  suggestedPositionPercent Float
+  thesis                   String
+  reasons                  String
+  warnings                 String
+  invalidReason            String?
+  marketDataMode           String
+  marketDataSource         String
+  marketTimestamp          DateTime
+  calculatedAt             DateTime
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  archivedAt               DateTime?
+  isDemo                   Boolean           @default(true)
+  events                   PlanEvent[]
+  review                   PlanReview?
+  snapshot                 SignalSnapshot?
+
+  @@unique([planDate, code, planType, status])
+  @@index([code, planDate])
+  @@index([status])
+  @@index([marketDataMode])
+}
+
+model PlanEvent {
+  id            String        @id @default(cuid())
+  tradingPlanId String
+  eventType     PlanEventType
+  eventTime     DateTime
+  price         Float?
+  description   String
+  source        String
+  metadata      String
+  createdAt     DateTime      @default(now())
+  tradingPlan   TradingPlan   @relation(fields: [tradingPlanId], references: [id], onDelete: Cascade)
+
+  @@index([tradingPlanId, eventTime])
+}
+
+model PlanReview {
+  id                               String        @id @default(cuid())
+  tradingPlanId                    String        @unique
+  reviewDate                       String
+  outcome                          ReviewOutcome
+  entryPrice                       Float?
+  exitPrice                        Float?
+  highestPrice                     Float?
+  lowestPrice                      Float?
+  returnPercent                    Float
+  maxFavorableExcursionPercent     Float
+  maxAdverseExcursionPercent       Float
+  holdingDays                      Int
+  followedPlan                     Boolean
+  executionNotes                   String
+  whatWorked                       String
+  whatFailed                       String
+  lesson                           String
+  createdAt                        DateTime      @default(now())
+  updatedAt                        DateTime      @updatedAt
+  isDemo                           Boolean       @default(true)
+  tradingPlan                      TradingPlan   @relation(fields: [tradingPlanId], references: [id], onDelete: Cascade)
+}
+
+model SignalSnapshot {
+  id              String      @id @default(cuid())
+  tradingPlanId   String      @unique
+  snapshotTime    DateTime
+  quoteJson       String
+  indicatorsJson  String
+  shortScoreJson  String
+  midScoreJson    String
+  tradeLevelsJson String
+  dataStatus      String
+  dataSource      String
+  isDemo          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  tradingPlan     TradingPlan @relation(fields: [tradingPlanId], references: [id], onDelete: Cascade)
+}
