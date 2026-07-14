@@ -10,14 +10,29 @@ export default async function SettingsPage() {
   let minimumRefreshIntervalMs = liveConfig.minimumIntervalMs;
   const delaySeconds = 0;
   let isLicensedSource = false;
+  let akshareVersion = "-";
+  let lastSuccessAt = "-";
+  let cacheStatus = "-";
+  let disclaimer = "Mock/Replay 模式为演示数据；真实行情模式需确认数据来源授权与时效。";
 
   try {
     const provider = getProvider(mode);
-    const health = await provider.healthCheck();
+    const health = await provider.healthCheck() as Awaited<ReturnType<typeof provider.healthCheck>> & {
+      akshareVersion?: string;
+      lastSuccessAt?: string | null;
+      cache?: { entries?: number; lastSuccessEntries?: number };
+      disclaimer?: string;
+    };
     providerName = health.source;
     healthStatus = health.ok ? "健康" : "不可用";
     minimumRefreshIntervalMs = health.capabilities.minimumRefreshIntervalMs;
     isLicensedSource = health.capabilities.isLicensedSource;
+    akshareVersion = health.akshareVersion ?? "-";
+    lastSuccessAt = health.lastSuccessAt ?? "-";
+    cacheStatus = health.cache
+      ? `entries ${health.cache.entries ?? 0} / last ${health.cache.lastSuccessEntries ?? 0}`
+      : "-";
+    disclaimer = health.disclaimer ?? disclaimer;
   } catch {
     if (mode === "live") providerName = liveConfig.providerName || "真实行情供应商尚未配置";
   }
@@ -43,6 +58,13 @@ export default async function SettingsPage() {
           <SettingMetric label="当前延迟" value={`${delaySeconds} 秒`} />
           <SettingMetric label="是否正式授权数据源" value={isLicensedSource ? "是" : "否"} />
           <SettingMetric label="API密钥是否已配置" value={liveConfig.apiKeyConfigured ? "已配置" : "未配置"} />
+          <SettingMetric label="AKShare版本" value={akshareVersion} />
+          <SettingMetric label="最近成功请求" value={lastSuccessAt} />
+          <SettingMetric label="缓存状态" value={cacheStatus} />
+        </section>
+
+        <section className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
+          {disclaimer}
         </section>
       </div>
     </AppShell>

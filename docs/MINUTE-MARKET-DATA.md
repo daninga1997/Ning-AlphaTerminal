@@ -79,6 +79,9 @@ MARKET_DATA_LIVE_API_KEY=
 MARKET_DATA_LIVE_PROVIDER_NAME=
 MARKET_DATA_LIVE_TIMEOUT_MS=5000
 MARKET_DATA_LIVE_MIN_INTERVAL_MS=60000
+MARKET_DATA_LIVE_PROVIDER=akshare
+AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
+AKSHARE_SERVICE_TIMEOUT_MS=12000
 ```
 
 密钥只允许服务端读取，不得进入前端 Bundle、日志或 API 响应。
@@ -138,3 +141,14 @@ API 返回：
 - 延迟说明。
 - 交易日历和时区规则。
 - 错误码文档。
+
+## 11. AKShare分钟线说明
+
+Sprint 8 增加 `AkShareProvider`。分钟线通过独立 Python 服务调用 AKShare `stock_zh_a_hist_min_em`。
+
+限制：
+
+- 只用于趋势、量能、突破和跌破确认。
+- 不提高到高频轮询。
+- 不提供 Level-2、盘口、逐笔成交。
+- 如果 AKShare 当前接口不支持某周期或时间范围，必须返回明确能力错误。

@@ -42,9 +42,10 @@ Mock 模式：
 
 Live 模式：
 
-- 当前尚未配置正式 Provider。
-- 如果设置为 `MARKET_DATA_MODE=live`，系统会明确返回“真实行情供应商尚未配置”。
+- 如果设置为 `MARKET_DATA_MODE=live` 且 `MARKET_DATA_LIVE_PROVIDER=akshare`，系统通过独立 Python FastAPI 服务调用 AKShare。
+- 如果未选择 AKShare，系统会明确返回“真实行情供应商尚未配置”。
 - 不允许自动退回 Mock 并伪装成真实行情。
+- AKShare 属于公开数据接口，不等同于交易所直连或券商专业行情。
 
 Replay 模式：
 
@@ -94,6 +95,7 @@ Replay 模式：
 - 缓存过期后重新请求 Provider。
 - Provider 异常时可返回最后一次成功数据，但必须标记 `stale`。
 - 不允许静默使用无限期旧数据。
+- AKShare Python 服务也有独立 TTL 缓存，Next.js 侧仍保留统一缓存和安全判断。
 
 ## 7. 错误处理
 
@@ -118,6 +120,14 @@ API 错误响应不暴露服务器堆栈：
 - `GET /api/market/quotes?codes=002472,002317`
 - `GET /api/market/stocks/[code]/quote`
 - `GET /api/market/stocks/[code]/bars?period=120d`
+- `GET /api/market/stocks/[code]/minutes?period=5m&limit=120`
+
+AKShare Python 服务内部接口：
+
+- `GET http://127.0.0.1:8001/health`
+- `GET http://127.0.0.1:8001/quotes?codes=002472,002317`
+- `GET http://127.0.0.1:8001/stocks/002472/daily-bars`
+- `GET http://127.0.0.1:8001/stocks/002472/minute-bars?period=5m&limit=120`
 - `GET /api/market/health`
 - `GET /api/market/provider`
 - `GET /api/market/stocks/[code]/minutes?period=1m&limit=120`

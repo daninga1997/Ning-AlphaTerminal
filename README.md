@@ -36,12 +36,34 @@ Sprint 7 已完成：Trading Memory V1 交易计划与复盘记忆系统。
 
 当前仍未接入：
 
-- 真实行情接口
+- 券商级专业行情接口
 - API 密钥
 - AI 接口
 - 自动荐股
 - 真实建仓价格算法
 - 券商交易能力
+
+## AKShare公开行情服务
+
+Sprint 8 增加独立 Python FastAPI 服务，用于通过 AKShare 获取 A 股公开数据。
+
+启动 Python 服务：
+
+```powershell
+python -m venv services/akshare-service/.venv
+services\akshare-service\.venv\Scripts\python.exe -m pip install -r services/akshare-service/requirements-dev.txt
+powershell -ExecutionPolicy Bypass -File scripts/start-akshare-service.ps1
+```
+
+Next.js 切换到 AKShare：
+
+```env
+MARKET_DATA_MODE=live
+MARKET_DATA_LIVE_PROVIDER=akshare
+AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
+```
+
+AKShare 是公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。
 
 ## 模拟数据说明
 
