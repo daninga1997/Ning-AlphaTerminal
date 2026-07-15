@@ -1,5 +1,6 @@
 import type { DailyBar } from "@/types/market";
 import type { StockAnalysis } from "@/types/stock";
+import type { DataIntegrityReport } from "@/types/data-integrity";
 import { ScoreBreakdownPanel } from "./detail/score-breakdown-panel";
 import { MinuteTrendPanel } from "./detail/minute-trend-panel";
 import { RiskPanel } from "./detail/risk-panel";
@@ -8,10 +9,12 @@ import { StockPriceChart } from "./detail/stock-price-chart";
 import { TechnicalSnapshot } from "./detail/technical-snapshot";
 import { TradingPlanCard } from "./detail/trading-plan-card";
 import { SaveTradingPlanButton } from "./detail/save-trading-plan-button";
+import { StockIntegrityCard } from "../data-integrity/stock-integrity-card";
 
-export function StockDetailView({ stock, bars }: { stock: StockAnalysis; bars: DailyBar[] }) {
+export function StockDetailView({ stock, bars, integrityReport }: { stock: StockAnalysis; bars: DailyBar[]; integrityReport?: DataIntegrityReport }) {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
+      {integrityReport && <StockIntegrityCard report={integrityReport} />}
       <StockDecisionHeader stock={stock} />
       <TradingPlanCard stock={stock} />
       <SaveTradingPlanButton stock={stock} />
@@ -28,7 +31,7 @@ export function StockDetailView({ stock, bars }: { stock: StockAnalysis; bars: D
         />
       </div>
       <TechnicalSnapshot indicators={stock.indicators} />
-      <StockPriceChart bars={bars} />
+      <StockPriceChart bars={bars} meta={stock.technicalDataMeta} />
       <MinuteTrendPanel code={stock.code} />
       <RiskPanel stock={stock} />
     </div>
