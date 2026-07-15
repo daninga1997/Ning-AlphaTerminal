@@ -105,6 +105,24 @@ describe("Source Consistency", () => {
     });
     expect(result.isConsistent).toBe(true);
   });
+
+  it("Replay和Live混用被阻断", () => {
+    const result = checkSourceConsistency({
+      quote: { source: "akshare", mode: "live", isDemo: false },
+      daily: { source: "replay", mode: "replay", isDemo: false },
+      minute: null,
+    });
+    expect(result.isConsistent).toBe(false);
+  });
+
+  it("不同Live源组合通过(带警告)", () => {
+    const result = checkSourceConsistency({
+      quote: { source: "akshare_sina", mode: "live", isDemo: false },
+      daily: { source: "akshare_eastmoney", mode: "live", isDemo: false },
+      minute: null,
+    });
+    expect(result.isConsistent).toBe(true);
+  });
 });
 
 describe("Permission Matrix", () => {
