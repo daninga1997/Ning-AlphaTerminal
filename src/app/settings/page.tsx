@@ -52,7 +52,7 @@ export default async function SettingsPage() {
       <div className="mx-auto flex w-full max-w-[960px] flex-col gap-4">
         <section className="rounded-lg border border-[#252A33] bg-[#111318] p-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#586174]">
-            Settings
+            配置
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-[#F4F7FB]">行情配置状态</h1>
           <p className="mt-3 text-sm leading-6 text-[#8B95A7]">
