@@ -5,7 +5,7 @@ import { StockSignalBadge } from "../stocks/stock-signal-badge";
 import { formatPrice, getOpportunitySummary } from "./dashboard-view-model";
 import { PlanMetric, SectionTitle } from "./dashboard-primitives";
 
-export function TodayDecision({ stock }: { stock?: StockAnalysis }) {
+export function TodayDecision({ stock, canGenerateFullPlan = true }: { stock?: StockAnalysis; canGenerateFullPlan?: boolean }) {
   return (
     <section className="min-h-[260px] rounded-lg border border-white/10 bg-[#111722] p-5">
       <div className="flex items-start justify-between gap-4">
@@ -15,7 +15,14 @@ export function TodayDecision({ stock }: { stock?: StockAnalysis }) {
         </span>
       </div>
 
-      {stock ? (
+      {!canGenerateFullPlan ? (
+        <div className="mt-6 rounded-lg border border-red-300/20 bg-red-400/10 p-6">
+          <div className="text-lg font-semibold text-red-200">数据完整性不足</div>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-red-100">
+            当前数据不能满足生成完整A级机会的条件。请检查数据来源、交易日和行情延迟。
+          </p>
+        </div>
+      ) : stock ? (
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
           <div>
             <div className="flex flex-wrap items-center gap-3">
