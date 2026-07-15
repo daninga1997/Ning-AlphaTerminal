@@ -10,7 +10,7 @@ type ShortTermInput = {
   sectorScore: number;
 };
 
-const calculatedAt = "2026-07-14 15:00";
+const calculatedAt = new Date().toISOString();
 
 function clamp(score: number, maxScore: number): number {
   return Math.max(0, Math.min(maxScore, Math.round(score)));
