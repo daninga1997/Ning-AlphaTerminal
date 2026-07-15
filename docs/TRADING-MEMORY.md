@@ -79,6 +79,17 @@ Mock 和 Replay 必须标记 `isDemo=true`。默认统计不把演示记录和�
 
 ## API
 
+## Strategy Engine 接入
+
+Sprint 11 新增策略引擎后，交易记忆可以保存由策略引擎生成的结构化计划，但 active 计划仍必须通过服务端 Guard。
+
+规则：
+
+- Strategy Engine 的 `buy_allowed` 不等于自动下单。
+- 数据权限不是 `full` 时，只能保存 draft 或观察结论。
+- `SignalSnapshot` 仍然冻结创建当时的数据、评分、关注区、入场计划、止损和目标。
+- 后续策略重算不得覆盖历史计划快照。
+
 - `GET /api/memory/plans`
 - `POST /api/memory/plans`
 - `GET /api/memory/plans/[id]`

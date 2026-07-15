@@ -12,8 +12,10 @@ import { ReportSummary } from "./report-summary";
 import { ReportTabs } from "./report-tabs";
 import { ReportsHeader } from "./reports-header";
 import { SectorRankingSection } from "./sector-ranking-section";
+import { ReportsStrategySection } from "../strategy/strategy-plan-panel";
+import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
 
-export function ReportsView({ reports }: { reports: Report[] }) {
+export function ReportsView({ reports, strategyItems = [] }: { reports: Report[]; strategyItems?: StrategyWatchlistItem[] }) {
   const initialReport = getLatestReport(reports);
   const [activeType, setActiveType] = useState<ReportType>(initialReport.type);
   const [activeReportId, setActiveReportId] = useState(initialReport.id);
@@ -39,6 +41,7 @@ export function ReportsView({ reports }: { reports: Report[] }) {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-4">
           <ReportSummary report={activeReport} />
+          {strategyItems.length > 0 ? <ReportsStrategySection items={strategyItems} /> : null}
           <MarketOverviewSection report={activeReport} />
           <SectorRankingSection sectors={activeReport.sectors} />
           <ReportStockSection report={activeReport} />

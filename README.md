@@ -4,7 +4,7 @@ A 股深圳主板交易观察网页的静态演示项目。
 
 ## 当前阶段
 
-Sprint 10 已完成：Market Data Stabilization V1 本地市场数据仓库、同步任务和能力状态。
+Sprint 11 已完成：Alpha 龙头趋势共振策略引擎 V1。
 
 已完成：
 
@@ -37,6 +37,12 @@ Sprint 10 已完成：Market Data Stabilization V1 本地市场数据仓库、�
 - 本地市场数据 Repository
 - Quotes、Daily、Minutes、Sectors、Overview 同步 API
 - 本地同步脚本和收盘固化流程
+- Alpha 策略引擎 V1
+- 龙头首阴修复、尾盘趋势确认、趋势波段三套固定策略
+- 统一关注区、买入区、放弃追高价、动态止损、目标位和仓位模型
+- `/api/strategies/stocks/[code]`
+- `/api/strategies/watchlist`
+- `/api/strategies/stocks/[code]/trade-plan`
 
 当前仍未接入：
 
@@ -46,6 +52,9 @@ Sprint 10 已完成：Market Data Stabilization V1 本地市场数据仓库、�
 - 自动荐股
 - 真实建仓价格算法
 - 券商交易能力
+- Backtest
+- AI Engine
+- 自动参数优化
 
 ## AKShare公开行情服务
 
@@ -68,6 +77,20 @@ AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
 ```
 
 AKShare 是公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。
+
+## Alpha 策略引擎
+
+策略引擎只使用已经通过 Data Integrity Layer 的输入，不直接请求行情 Provider。
+
+当前策略：
+
+- `leader_first_yin_v1`：龙头首阴修复。
+- `late_session_momentum_v1`：尾盘趋势确认。
+- `trend_swing_v1`：趋势波段。
+
+当数据权限不是 `full` 时，系统不会生成新的 `buy_allowed`，也不会把高评分直接等同于可以买。
+
+详细规则见 `docs/ALPHA-STRATEGY-ENGINE-V1.md`。
 
 本地市场数据检查：
 

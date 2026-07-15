@@ -6,6 +6,7 @@ import { getMarketDataMode, getProvider } from "@/server/market-data/provider-re
 import { analyzeAllStocksFromMarketData } from "@/server/market-data/stock-analysis-service";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import { PrismaMarketDataRepository } from "@/server/market-storage/prisma-market-data-repository";
+import { buildStrategyWatchlist } from "@/server/strategy-engine/strategy-watchlist-service";
 import type { DataIntegrityReport } from "@/types/data-integrity";
 
 export const revalidate = 15;
@@ -18,6 +19,7 @@ export default async function Home() {
   const health = await provider.healthCheck();
   const storedMarketOverview = await marketRepository.getLatestMarketOverview();
   const storedSectors = await marketRepository.getSectorSnapshots();
+  const strategyItems = await buildStrategyWatchlist().catch(() => []);
   const firstStock = stocks[0];
   const capabilityMatrix = buildCapabilityMatrix({
     mode,
@@ -91,6 +93,7 @@ export default async function Home() {
         stocks={stocks}
         storedMarketOverview={storedMarketOverview}
         storedSectors={storedSectors}
+        strategyItems={strategyItems}
       />
     </AppShell>
   );

@@ -9,8 +9,9 @@ import { StockFiltersPanel } from "./stock-filters";
 import { WatchlistQuoteRefresh } from "./watchlist-quote-refresh";
 import { applyQuoteRefreshFailure, mergeQuoteRefreshResult, type QuoteRefreshPayload } from "./watchlist-quotes-model";
 import { getLatestWatchlistUpdate, getWatchlistStatistics } from "./watchlist-view-model";
+import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
 
-export function WatchlistView({ stocks }: { stocks: StockAnalysis[] }) {
+export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAnalysis[]; strategyItems?: StrategyWatchlistItem[] }) {
   const [liveStocks, setLiveStocks] = useState(stocks);
   const [filters, setFilters] = useState<StockFilters>({
     query: "",
@@ -20,6 +21,7 @@ export function WatchlistView({ stocks }: { stocks: StockAnalysis[] }) {
   const [sortField, setSortField] = useState<StockSortField>("totalScore");
   const sectors = useMemo(() => getUniqueSectors(liveStocks), [liveStocks]);
   const watchlistCodes = useMemo(() => liveStocks.map((stock) => stock.code), [liveStocks]);
+  const strategyByCode = useMemo(() => new Map(strategyItems.map((item) => [item.code, item])), [strategyItems]);
   const visibleStocks = useMemo(
     () => sortStocks(filterStocks(liveStocks, filters), sortField),
     [filters, sortField, liveStocks],
@@ -86,7 +88,7 @@ export function WatchlistView({ stocks }: { stocks: StockAnalysis[] }) {
       {visibleStocks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {visibleStocks.map((stock) => (
-            <StockCard key={stock.code} stock={stock} />
+            <StockCard key={stock.code} stock={stock} strategyItem={strategyByCode.get(stock.code)} />
           ))}
         </div>
       ) : (

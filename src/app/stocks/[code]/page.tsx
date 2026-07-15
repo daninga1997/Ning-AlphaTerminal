@@ -5,6 +5,8 @@ import { mockStocks } from "@/data/mock-stocks";
 import { getStockDetailFromMarketData } from "@/server/market-data/stock-analysis-service";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import { getMarketDataMode } from "@/server/market-data/provider-registry";
+import { buildStrategyInputForCode } from "@/server/strategy-engine/strategy-input-builder";
+import { runAllStrategies } from "@/server/strategy-engine/strategy-engine";
 import type { StockQuote } from "@/types/market-data";
 
 export function generateStaticParams() {
@@ -70,10 +72,13 @@ export default async function StockDetailPage({ params }: { params: Promise<{ co
     sectors: null,
     marketOverview: null,
   });
+  const strategyOutput = await buildStrategyInputForCode(code, { skipProviderHistorical: true })
+    .then((input) => runAllStrategies(input))
+    .catch(() => null);
 
   return (
     <AppShell>
-      <StockDetailView bars={detail.bars} integrityReport={integrityReport} stock={detail.stock} />
+      <StockDetailView bars={detail.bars} integrityReport={integrityReport} stock={detail.stock} strategyOutput={strategyOutput} />
     </AppShell>
   );
 }

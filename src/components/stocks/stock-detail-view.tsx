@@ -10,12 +10,15 @@ import { TechnicalSnapshot } from "./detail/technical-snapshot";
 import { TradingPlanCard } from "./detail/trading-plan-card";
 import { SaveTradingPlanButton } from "./detail/save-trading-plan-button";
 import { StockIntegrityCard } from "../data-integrity/stock-integrity-card";
+import { StockStrategyPanel } from "../strategy/strategy-plan-panel";
+import type { StrategyEngineOutput } from "@/server/strategy-engine/types/strategy-result";
 
-export function StockDetailView({ stock, bars, integrityReport }: { stock: StockAnalysis; bars: DailyBar[]; integrityReport?: DataIntegrityReport }) {
+export function StockDetailView({ stock, bars, integrityReport, strategyOutput }: { stock: StockAnalysis; bars: DailyBar[]; integrityReport?: DataIntegrityReport; strategyOutput?: StrategyEngineOutput | null }) {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4">
       {integrityReport && <StockIntegrityCard report={integrityReport} />}
       <StockDecisionHeader stock={stock} />
+      <StockStrategyPanel output={strategyOutput ?? null} />
       <TradingPlanCard stock={stock} />
       <SaveTradingPlanButton stock={stock} />
       <div className="grid gap-4 xl:grid-cols-2">

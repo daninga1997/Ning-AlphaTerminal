@@ -5,12 +5,14 @@ import { getSignalPresentation } from "../../lib/presentation/signal-presentatio
 import { getSourceDisplayName } from "../../server/market-data/capability-matrix";
 import { ScoreBadge } from "./score-badge";
 import { getSignalSummary } from "./watchlist-view-model";
+import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
 
-export const StockCard = memo(function StockCard({ stock }: { stock: StockAnalysis }) {
+export const StockCard = memo(function StockCard({ stock, strategyItem }: { stock: StockAnalysis; strategyItem?: StrategyWatchlistItem }) {
   const signal = getSignalPresentation(stock.signal);
   const meta = stock.marketDataMeta;
   const quoteUnavailable = meta?.status === "unavailable";
   const quoteStale = meta?.status === "stale";
+  const plan = strategyItem?.finalPlan;
 
   return (
     <Link
@@ -59,6 +61,15 @@ export const StockCard = memo(function StockCard({ stock }: { stock: StockAnalys
 
       <div className="mt-4 flex flex-1 flex-col justify-between gap-4">
         <p className="text-sm leading-6 text-[#DCE4F0]">{getSignalSummary(stock)}</p>
+        {plan ? (
+          <div className="rounded-lg border border-[#252A33] bg-[#090A0D] p-3 text-xs leading-5 text-[#8B95A7]">
+            <div className="font-semibold text-[#DCE4F0]">
+              策略 {plan.primaryStrategy ?? "无主策略"} · {plan.currentAction}
+            </div>
+            <div>关注区 {plan.watchZone.low.toFixed(2)}-{plan.watchZone.high.toFixed(2)} · 追高上限 {plan.chaseLimit.price.toFixed(2)}</div>
+            <div>完整度 {strategyItem.integrity.completenessPercent}% · {strategyItem.integrity.permission}</div>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between gap-3 border-t border-[#1A1F27] pt-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#586174]">

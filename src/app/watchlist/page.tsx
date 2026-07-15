@@ -3,14 +3,14 @@ import { WatchlistView } from "@/components/stocks/watchlist-view";
 import { analyzeAllStocksFromMarketData } from "@/server/market-data/stock-analysis-service";
 import { IntegrityStatusBar } from "@/components/data-integrity/integrity-status-bar";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
-import { getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
 import { getMarketDataMode } from "@/server/market-data/provider-registry";
+import { buildStrategyWatchlist } from "@/server/strategy-engine/strategy-watchlist-service";
 
 export default async function WatchlistPage() {
   const stocks = await analyzeAllStocksFromMarketData();
   const mode = getMarketDataMode();
   const firstStock = stocks[0];
-  const latestTradingDate = getLatestExpectedTradingDate(new Date());
+  const strategyItems = await buildStrategyWatchlist().catch(() => []);
 
   const quote = firstStock ? {
     code: firstStock.code,
@@ -59,7 +59,7 @@ export default async function WatchlistPage() {
           quoteTimestamp={integrityReport.marketTimestamp}
           quoteSource={integrityReport.quoteSource}
         />
-        <WatchlistView stocks={stocks} />
+        <WatchlistView stocks={stocks} strategyItems={strategyItems} />
       </div>
     </AppShell>
   );

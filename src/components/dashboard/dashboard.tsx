@@ -11,6 +11,8 @@ import { QuickWatchlist } from "./quick-watchlist";
 import { TodayDecision } from "./today-decision";
 import { TodayWatch } from "./today-watch";
 import { IntegrityStatusBar } from "../data-integrity/integrity-status-bar";
+import { DashboardStrategyCandidates } from "../strategy/strategy-plan-panel";
+import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
 
 export { DashboardAssistant };
 
@@ -20,12 +22,14 @@ export function Dashboard({
   integrityReport,
   storedMarketOverview,
   storedSectors,
+  strategyItems,
 }: {
   capabilityMatrix?: DataCapabilityMatrix;
   stocks: StockAnalysis[];
   integrityReport?: DataIntegrityReport | null;
   storedMarketOverview?: StoredMarketOverviewSnapshot | null;
   storedSectors?: StoredSectorDailySnapshot[] | null;
+  strategyItems?: StrategyWatchlistItem[];
 }) {
   const opportunities = getDemoOpportunities(stocks);
   const hotSectors = getStoredHotSectors(storedSectors ?? null) ?? (capabilityMatrix?.sectors.currentStatus === "unavailable" ? [] : getHotSectors(stocks));
@@ -47,6 +51,7 @@ export function Dashboard({
       ) : null}
       <MarketOverview capabilityMatrix={capabilityMatrix} stocks={stocks} storedMarketOverview={storedMarketOverview} />
       <TodayDecision stock={aLevelStock} canGenerateFullPlan={integrityReport?.canGenerateTradePlan ?? false} />
+      {strategyItems ? <DashboardStrategyCandidates items={strategyItems} /> : null}
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <TodayWatch stocks={opportunities.bLevel} />
         <HotSectors sectors={hotSectors} />
