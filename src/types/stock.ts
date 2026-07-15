@@ -1,4 +1,5 @@
 import type { IndicatorSnapshot } from "./market";
+import type { MarketDataMeta } from "./market-data";
 import type { MidTermGrade, ScoreResult, ShortTermGrade, TradeLevels } from "./scoring";
 
 export type StockSignal = "buy" | "wait" | "hold" | "reduce" | "avoid";
@@ -45,4 +46,7 @@ export interface StockAnalysis extends MockStock {
   tradeLevels: TradeLevels;
   indicators: IndicatorSnapshot;
   dataUpdatedAt: string;
+  marketDataMeta?: MarketDataMeta;
+  technicalDataMeta?: MarketDataMeta;
+  dataCapabilityWarning?: string | null;
 }

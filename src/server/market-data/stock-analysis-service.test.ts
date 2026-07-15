@@ -3,6 +3,7 @@ import type { DailyBarOptions } from "./market-data-provider";
 import { MarketDataService } from "./market-data-service";
 import { MockMarketDataProvider } from "./mock-market-data-provider";
 import { getStockDetailFromMarketData } from "./stock-analysis-service";
+import { MarketDataError } from "./market-data-errors";
 
 class CountingProvider extends MockMarketDataProvider {
   readonly requestedDailyCodes: string[] = [];
@@ -33,5 +34,28 @@ describe("stock detail market data loading", () => {
     await getStockDetailFromMarketData("002317", service);
 
     expect(provider.requestedDailyCodes).toEqual(["002472", "002317"]);
+  });
+
+  it("uses real quote but blocks new buy when daily technical data is unavailable", async () => {
+    const provider = new CountingProvider();
+    provider.getQuote = async () => ({
+      ...(await new MockMarketDataProvider().getQuote("002472")),
+      status: "delayed",
+      source: "AKShare stock_zh_a_spot",
+      isDemo: false,
+      strategyUsed: "sina_spot",
+    });
+    provider.getDailyBars = async () => {
+      throw new MarketDataError("UPSTREAM_UNAVAILABLE", "daily unavailable");
+    };
+    const service = new MarketDataService({ provider, cacheTtlMs: 0 });
+
+    const detail = await getStockDetailFromMarketData("002472", service);
+
+    expect(detail?.stock.currentPrice).toBeGreaterThan(0);
+    expect(detail?.stock.marketDataMeta.status).toBe("delayed");
+    expect(detail?.stock.technicalDataMeta.status).toBe("unavailable");
+    expect(detail?.stock.signal).not.toBe("buy");
+    expect(detail?.stock.shortTermScore.warnings).toContain("仅报价可用，技术确认不足。");
   });
 });

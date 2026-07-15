@@ -16,6 +16,27 @@ Page / API
 
 页面不得直接依赖具体 Provider。当前页面通过 server 端 MarketDataService 获取 Quote、K线、板块和市场概览。
 
+Sprint 10 后新增持久化边界：
+
+```text
+Provider -> MarketSyncService -> MarketDataRepository -> Prisma/SQLite
+MarketDataService -> Provider
+MarketDataService -> Repository stale fallback
+```
+
+Provider 不直接操作数据库。页面不直接查询 Prisma。
+
+新增本地存储模型：
+
+- DailyMarketBar
+- MinuteMarketBar
+- StockQuoteSnapshot
+- SectorDailySnapshot
+- MarketOverviewSnapshot
+- DataFetchRun
+
+数据不完整时使用 `partial` 或 `stale`，不得标记为 `fresh`。
+
 ## 2. Provider 接口
 
 `MarketDataProvider` 包含：

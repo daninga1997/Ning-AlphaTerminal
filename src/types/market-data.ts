@@ -5,6 +5,7 @@ export type MarketDataStatus =
   | "delayed"
   | "stale"
   | "unavailable"
+  | "partial"
   | "market_closed"
   | "historical_replay"
   | "rate_limited";
@@ -59,6 +60,8 @@ export interface StockQuote {
   status: MarketDataStatus;
   source: string;
   isDemo: boolean;
+  strategyUsed?: string | null;
+  upstreamErrorCode?: string | null;
 }
 
 export interface MarketDailyBar {
@@ -154,6 +157,9 @@ export interface MarketDataMeta {
   isReplay?: boolean;
   delayedSeconds?: number;
   period?: MinuteBarPeriod;
+  strategyUsed?: string | null;
+  attemptedStrategies?: Array<Record<string, unknown>>;
+  upstreamErrorCode?: string | null;
 }
 
 export interface MarketDataSuccess<T> {

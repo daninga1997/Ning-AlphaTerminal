@@ -9,16 +9,27 @@ from .cache import TTLCache
 from .config import Settings, get_settings
 from .errors import AkshareServiceError, normalize_error
 from .models import error_response
+from .quote_circuit import QuoteCircuitBreaker
+from .quote_strategy import AkShareQuoteStrategy
 from .routers import daily_bars, health, minute_bars, quotes
 
 
-def create_app(client=None, settings: Settings | None = None) -> FastAPI:
+def create_app(client=None, settings: Settings | None = None, quote_strategy=None) -> FastAPI:
   settings = settings or get_settings()
   app = FastAPI(title="Alpha Terminal AKShare Service", version="1.0.0")
   app.state.settings = settings
   app.state.client = client or AkShareClient(settings)
+  app.state.quote_strategy = quote_strategy or AkShareQuoteStrategy(client=app.state.client)
+  app.state.quote_circuit = QuoteCircuitBreaker(
+    failure_threshold=settings.quote_circuit_failure_threshold,
+    open_seconds=settings.quote_circuit_open_seconds,
+  )
   app.state.cache = TTLCache()
   app.state.last_success_at = None
+  app.state.daily_bars_last_success_at = None
+  app.state.daily_bars_last_failure_at = None
+  app.state.minute_bars_last_success_at = None
+  app.state.minute_bars_last_failure_at = None
 
   app.add_middleware(
     CORSMiddleware,
@@ -30,7 +41,7 @@ def create_app(client=None, settings: Settings | None = None) -> FastAPI:
 
   @app.exception_handler(AkshareServiceError)
   async def akshare_error_handler(_: Request, error: AkshareServiceError):
-    return JSONResponse(error_response(error.code, error.message), status_code=error.status_code)
+    return JSONResponse(error_response(error.code, error.message, extra_meta=error.details), status_code=error.status_code)
 
   @app.exception_handler(Exception)
   async def generic_error_handler(_: Request, error: Exception):

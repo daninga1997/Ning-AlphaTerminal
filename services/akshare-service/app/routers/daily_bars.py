@@ -25,11 +25,16 @@ async def daily_bars(
   cache_key = f"daily:{code}:{start or ''}:{end or ''}:{adjust}"
 
   async def load():
-    frame = await request.app.state.client.get_daily_bars(code, start, end, adjust)
-    return normalize_daily_bars(frame, code)
+    try:
+      frame = await request.app.state.client.get_daily_bars(code, start, end, adjust)
+      return normalize_daily_bars(frame, code)
+    except Exception:
+      request.app.state.daily_bars_last_failure_at = now_iso()
+      raise
 
   result = await request.app.state.cache.get_or_load(cache_key, request.app.state.settings.daily_cache_seconds, load)
   request.app.state.last_success_at = now_iso()
+  request.app.state.daily_bars_last_success_at = now_iso()
   data = result.value
   market_timestamp = data[-1]["date"] if data else None
   return success_response(

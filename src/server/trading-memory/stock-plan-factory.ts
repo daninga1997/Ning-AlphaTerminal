@@ -16,7 +16,7 @@ export function buildPlanInputFromStock(
   const invalidReason = stock.tradeLevels.invalidReason;
   const planType = options.planType ?? "short_term";
   const planDate = stock.dataUpdatedAt.slice(0, 10);
-  const forcedDraft = dataStatus === "stale" || dataStatus === "unavailable" || Boolean(invalidReason);
+  const forcedDraft = dataStatus === "stale" || dataStatus === "unavailable" || dataStatus === "partial" || Boolean(invalidReason);
   const status = options.status ?? (forcedDraft ? "draft" : stock.signal === "buy" ? "active" : "draft");
   const decision = getDecisionSummary(stock);
 

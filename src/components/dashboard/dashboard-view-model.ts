@@ -6,6 +6,8 @@ export type SectorPulse = {
   name: string;
   heat: number;
   leaders: string[];
+  source?: string;
+  status?: string;
 };
 
 export type MarketOverviewModel = {
@@ -15,6 +17,8 @@ export type MarketOverviewModel = {
   fallingCount: number;
   turnover: number;
   updatedAt: string;
+  source?: string;
+  status?: string;
 };
 
 const currencyFormatter = new Intl.NumberFormat("zh-CN", {
@@ -62,6 +66,44 @@ export function getMarketOverview(stocks: StockAnalysis[]): MarketOverviewModel 
     turnover,
     updatedAt: getLatestUpdate(stocks),
   };
+}
+
+export function getStoredMarketOverview(input: {
+  marketScore: number;
+  advancingCount: number;
+  decliningCount: number;
+  totalAmount: number;
+  fetchedAt: Date;
+  source: string;
+  dataStatus: string;
+} | null): MarketOverviewModel | null {
+  if (!input) return null;
+  return {
+    sentiment: input.marketScore >= 70 ? "偏积极" : input.marketScore >= 55 ? "结构性活跃" : "谨慎",
+    suggestedPosition: input.dataStatus === "partial" ? "0%-20%" : input.marketScore >= 70 ? "40%-60%" : input.marketScore >= 55 ? "20%-40%" : "0%-20%",
+    risingCount: input.advancingCount,
+    fallingCount: input.decliningCount,
+    turnover: input.totalAmount / 100_000_000,
+    updatedAt: input.fetchedAt.toISOString(),
+    source: input.source,
+    status: input.dataStatus,
+  };
+}
+
+export function getStoredHotSectors(
+  sectors: Array<{ sectorName: string; strengthScore: number; leadingStocksJson: string; source: string; dataStatus: string }> | null,
+): SectorPulse[] | null {
+  if (!sectors || sectors.length === 0) return null;
+  return sectors
+    .map((sector) => ({
+      name: sector.sectorName,
+      heat: Math.round(sector.strengthScore),
+      leaders: JSON.parse(sector.leadingStocksJson) as string[],
+      source: sector.source,
+      status: sector.dataStatus,
+    }))
+    .sort((a, b) => b.heat - a.heat)
+    .slice(0, 3);
 }
 
 export function getHotSectors(stocks: StockAnalysis[]): SectorPulse[] {

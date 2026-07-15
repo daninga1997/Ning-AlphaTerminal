@@ -159,3 +159,143 @@ model SignalSnapshot {
   createdAt       DateTime    @default(now())
   tradingPlan     TradingPlan @relation(fields: [tradingPlanId], references: [id], onDelete: Cascade)
 }
+
+model DailyMarketBar {
+  id              String   @id @default(cuid())
+  code            String
+  tradingDate     String
+  open            Float
+  high            Float
+  low             Float
+  close           Float
+  previousClose   Float
+  volume          Float
+  amount          Float
+  turnoverRate    Float
+  adjustment      String
+  source          String
+  fetchedAt       DateTime
+  marketTimestamp DateTime?
+  dataStatus      String
+  checksum        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([code, tradingDate, adjustment, source])
+  @@index([code, tradingDate])
+  @@index([dataStatus])
+}
+
+model MinuteMarketBar {
+  id           String   @id @default(cuid())
+  code         String
+  tradingDate  String
+  timestamp    DateTime
+  period       String
+  open         Float
+  high         Float
+  low          Float
+  close        Float
+  volume       Float
+  amount       Float
+  averagePrice Float
+  source       String
+  fetchedAt    DateTime
+  dataStatus   String
+  checksum     String
+  createdAt    DateTime @default(now())
+
+  @@unique([code, timestamp, period, source])
+  @@index([code, tradingDate, period])
+  @@index([dataStatus])
+}
+
+model StockQuoteSnapshot {
+  id              String   @id @default(cuid())
+  code            String
+  tradingDate     String
+  marketTimestamp DateTime
+  price           Float
+  previousClose   Float
+  open            Float
+  high            Float
+  low             Float
+  change          Float
+  changePercent   Float
+  volume          Float
+  amount          Float
+  turnoverRate    Float
+  volumeRatio     Float
+  source          String
+  strategyUsed    String?
+  dataStatus      String
+  fetchedAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([code, tradingDate])
+  @@index([code, marketTimestamp])
+  @@index([dataStatus])
+}
+
+model SectorDailySnapshot {
+  id                String   @id @default(cuid())
+  sectorId          String
+  sectorName        String
+  tradingDate       String
+  changePercent     Float
+  advancingCount    Int
+  decliningCount    Int
+  unchangedCount    Int
+  limitUpCount      Int
+  totalAmount       Float
+  strengthScore     Float
+  leadingStocksJson String
+  source            String
+  fetchedAt         DateTime
+  dataStatus        String
+  createdAt         DateTime @default(now())
+
+  @@unique([sectorId, tradingDate, source])
+  @@index([tradingDate])
+  @@index([dataStatus])
+}
+
+model MarketOverviewSnapshot {
+  id              String   @id @default(cuid())
+  tradingDate     String
+  marketTimestamp DateTime
+  totalAmount     Float
+  advancingCount  Int
+  decliningCount  Int
+  unchangedCount  Int
+  limitUpCount    Int
+  limitDownCount  Int
+  marketScore     Float
+  source          String
+  fetchedAt       DateTime
+  dataStatus      String
+  createdAt       DateTime @default(now())
+
+  @@unique([tradingDate, source])
+  @@index([dataStatus])
+}
+
+model DataFetchRun {
+  id                 String    @id @default(cuid())
+  dataType           String
+  requestedCodesJson String
+  provider           String
+  strategyUsed       String?
+  startedAt          DateTime
+  completedAt        DateTime?
+  success            Boolean
+  recordCount        Int
+  missingCodesJson   String
+  errorCode          String?
+  durationMs         Int
+  usedStaleCache     Boolean
+  createdAt          DateTime  @default(now())
+
+  @@index([dataType, createdAt])
+  @@index([success])
+}

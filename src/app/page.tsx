@@ -5,7 +5,7 @@ import { buildCapabilityMatrix } from "@/server/market-data/capability-matrix";
 import { getMarketDataMode, getProvider } from "@/server/market-data/provider-registry";
 import { analyzeAllStocksFromMarketData } from "@/server/market-data/stock-analysis-service";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
-import { getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
+import { PrismaMarketDataRepository } from "@/server/market-storage/prisma-market-data-repository";
 import type { DataIntegrityReport } from "@/types/data-integrity";
 
 export const revalidate = 15;
@@ -14,7 +14,10 @@ export default async function Home() {
   const stocks = await analyzeAllStocksFromMarketData();
   const mode = getMarketDataMode();
   const provider = getProvider(mode);
+  const marketRepository = new PrismaMarketDataRepository();
   const health = await provider.healthCheck();
+  const storedMarketOverview = await marketRepository.getLatestMarketOverview();
+  const storedSectors = await marketRepository.getSectorSnapshots();
   const firstStock = stocks[0];
   const capabilityMatrix = buildCapabilityMatrix({
     mode,
@@ -82,7 +85,13 @@ export default async function Home() {
         />
       }
     >
-      <Dashboard capabilityMatrix={capabilityMatrix} integrityReport={integrityReport} stocks={stocks} />
+      <Dashboard
+        capabilityMatrix={capabilityMatrix}
+        integrityReport={integrityReport}
+        stocks={stocks}
+        storedMarketOverview={storedMarketOverview}
+        storedSectors={storedSectors}
+      />
     </AppShell>
   );
 }

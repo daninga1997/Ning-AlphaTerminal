@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getLiveProviderConfig } from "@/server/market-data/providers/live/live-provider-config";
+import { buildCapabilityMatrix } from "@/server/market-data/capability-matrix";
 import { getMarketDataMode, getProvider } from "@/server/market-data/provider-registry";
 import { errorJson } from "@/server/market-data/api-response";
 
@@ -9,12 +10,18 @@ export async function GET() {
     const liveConfig = getLiveProviderConfig();
     const provider = getProvider(mode);
     const health = await provider.healthCheck();
+    const capabilityMatrix = buildCapabilityMatrix({
+      mode,
+      providerName: health.source,
+      health,
+    });
     return NextResponse.json({
       success: true,
       data: {
         mode,
         providerName: health.source,
         health,
+        capabilityMatrix,
         capabilities: health.capabilities,
         delaySeconds: 0,
         isLicensedSource: health.capabilities.isLicensedSource,

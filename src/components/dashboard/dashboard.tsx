@@ -1,9 +1,10 @@
 import type { StockAnalysis } from "@/types/stock";
 import type { DataCapabilityMatrix } from "../../server/market-data/capability-matrix";
 import type { DataIntegrityReport } from "@/types/data-integrity";
+import type { StoredMarketOverviewSnapshot, StoredSectorDailySnapshot } from "@/server/market-storage/market-data-repository";
 import { getDemoOpportunities, getTopStocks } from "../../lib/stock-ranking";
 import { DashboardAssistant } from "./dashboard-assistant";
-import { getHotSectors } from "./dashboard-view-model";
+import { getHotSectors, getStoredHotSectors } from "./dashboard-view-model";
 import { HotSectors } from "./hot-sectors";
 import { MarketOverview } from "./market-overview";
 import { QuickWatchlist } from "./quick-watchlist";
@@ -17,13 +18,17 @@ export function Dashboard({
   capabilityMatrix,
   stocks,
   integrityReport,
+  storedMarketOverview,
+  storedSectors,
 }: {
   capabilityMatrix?: DataCapabilityMatrix;
   stocks: StockAnalysis[];
   integrityReport?: DataIntegrityReport | null;
+  storedMarketOverview?: StoredMarketOverviewSnapshot | null;
+  storedSectors?: StoredSectorDailySnapshot[] | null;
 }) {
   const opportunities = getDemoOpportunities(stocks);
-  const hotSectors = getHotSectors(stocks);
+  const hotSectors = getStoredHotSectors(storedSectors ?? null) ?? (capabilityMatrix?.sectors.currentStatus === "unavailable" ? [] : getHotSectors(stocks));
   const topStocks = getTopStocks(stocks, "totalScore", 10);
   const aLevelStock = opportunities.aLevel[0];
 
@@ -40,7 +45,7 @@ export function Dashboard({
           quoteSource={integrityReport.quoteSource}
         />
       ) : null}
-      <MarketOverview capabilityMatrix={capabilityMatrix} stocks={stocks} />
+      <MarketOverview capabilityMatrix={capabilityMatrix} stocks={stocks} storedMarketOverview={storedMarketOverview} />
       <TodayDecision stock={aLevelStock} canGenerateFullPlan={integrityReport?.canGenerateTradePlan ?? false} />
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <TodayWatch stocks={opportunities.bLevel} />

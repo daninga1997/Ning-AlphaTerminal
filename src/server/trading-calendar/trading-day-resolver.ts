@@ -60,7 +60,7 @@ export function getPreviousTradingDay(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00+08:00");
   if (isNaN(date.getTime())) throw TRADING_CALENDAR_ERRORS.INVALID_DATE;
 
-  let previous = new Date(date);
+  const previous = new Date(date);
   previous.setUTCDate(previous.getUTCDate() - 1);
 
   // 最多回溯30天
@@ -80,7 +80,7 @@ export function getNextTradingDay(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00+08:00");
   if (isNaN(date.getTime())) throw TRADING_CALENDAR_ERRORS.INVALID_DATE;
 
-  let next = new Date(date);
+  const next = new Date(date);
   next.setUTCDate(next.getUTCDate() + 1);
 
   for (let i = 0; i < 30; i++) {

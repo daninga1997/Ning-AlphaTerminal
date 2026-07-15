@@ -1,6 +1,6 @@
 import type { CompletenessInput } from "../../types/data-integrity";
 
-interface ComputeInput extends CompletenessInput {}
+type ComputeInput = CompletenessInput;
 
 const KEY_ERRORS_THAT_BLOCK = new Set([
   "WRONG_TRADING_DATE",

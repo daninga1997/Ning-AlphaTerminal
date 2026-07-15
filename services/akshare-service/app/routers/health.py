@@ -21,6 +21,7 @@ async def health(request: Request):
     akshare_version = "unavailable"
 
   cache_stats: dict[str, Any] = request.app.state.cache.stats()
+  quote_health = request.app.state.quote_circuit.health()
   return {
     "success": True,
     "data": {
@@ -36,6 +37,14 @@ async def health(request: Request):
         "maxSymbolsPerRequest": request.app.state.settings.max_symbols_per_request,
       },
       "lastSuccessAt": request.app.state.last_success_at,
+      "quoteCapability": True,
+      **quote_health,
+      "dailyBarsCapability": True,
+      "dailyBarsLastSuccessAt": request.app.state.daily_bars_last_success_at,
+      "dailyBarsLastFailureAt": request.app.state.daily_bars_last_failure_at,
+      "minuteBarsCapability": True,
+      "minuteBarsLastSuccessAt": request.app.state.minute_bars_last_success_at,
+      "minuteBarsLastFailureAt": request.app.state.minute_bars_last_failure_at,
       "cache": cache_stats,
       "disclaimer": "公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。",
     },

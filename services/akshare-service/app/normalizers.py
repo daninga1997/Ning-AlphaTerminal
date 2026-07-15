@@ -57,11 +57,24 @@ def _to_shanghai_iso(value: Any) -> str:
   return timestamp.isoformat()
 
 
-def normalize_quotes(frame: pd.DataFrame, codes: list[str], received_at: str) -> list[dict[str, Any]]:
+def _stock_code(value: Any) -> str:
+  text = str(value)
+  digits = "".join(char for char in text if char.isdigit())
+  return digits[-6:] if len(digits) >= 6 else text
+
+
+def normalize_quotes(
+  frame: pd.DataFrame,
+  codes: list[str],
+  received_at: str,
+  source: str = "AKShare stock_zh_a_spot_em",
+) -> list[dict[str, Any]]:
   if frame.empty:
     raise AkshareServiceError("NO_DATA", "AKShare未返回报价数据", 502)
   _required_columns(frame, ["代码", "名称", "最新价"])
-  filtered = frame[frame["代码"].astype(str).isin(codes)].copy()
+  filtered = frame.copy()
+  filtered["_alpha_code"] = filtered["代码"].map(_stock_code)
+  filtered = filtered[filtered["_alpha_code"].isin(codes)].copy()
   if filtered.empty:
     raise AkshareServiceError("NO_DATA", "未找到请求股票的报价数据", 502)
 
@@ -75,7 +88,7 @@ def normalize_quotes(frame: pd.DataFrame, codes: list[str], received_at: str) ->
     _validate_ohlc(open_price, high, low, price)
     quotes.append(
       {
-        "code": str(row["代码"]),
+        "code": str(row["_alpha_code"]),
         "name": str(row["名称"]),
         "exchange": "SZSE",
         "price": price,
@@ -89,12 +102,12 @@ def normalize_quotes(frame: pd.DataFrame, codes: list[str], received_at: str) ->
         "amount": _clean_number(row.get("成交额")),
         "turnoverRate": _clean_number(row.get("换手率")),
         "volumeRatio": _clean_number(row.get("量比")),
-        "bidPrice": price,
-        "askPrice": price,
+        "bidPrice": _clean_number(row.get("买入")) or price,
+        "askPrice": _clean_number(row.get("卖出")) or price,
         "marketTimestamp": received_at,
         "receivedAt": received_at,
         "status": "delayed",
-        "source": "AKShare stock_zh_a_spot_em",
+        "source": source,
         "isDemo": False,
       }
     )

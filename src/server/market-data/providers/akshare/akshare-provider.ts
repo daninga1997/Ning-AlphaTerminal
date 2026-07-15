@@ -5,7 +5,7 @@ import type {
   SectorSnapshot,
   StockQuote,
 } from "../../../../types/market-data";
-import type { MarketDataProvider, MinuteBarOptions, ProviderHealth } from "../../market-data-provider";
+import type { DailyBarOptions, MarketDataProvider, MinuteBarOptions, ProviderHealth } from "../../market-data-provider";
 import { akshareCapabilityUnavailable } from "./akshare-provider-errors";
 import { AkShareApiClient } from "./akshare-api-client";
 import { getAkShareProviderConfig, type AkShareProviderConfig } from "./akshare-provider-config";
@@ -24,6 +24,15 @@ export type AkShareProviderHealth = ProviderHealth & {
   lastSuccessAt?: string | null;
   cache?: unknown;
   disclaimer?: string;
+  quoteLastSuccessAt?: string | null;
+  quoteLastFailureAt?: string | null;
+  quoteConsecutiveFailures?: number;
+  quoteCircuitState?: string;
+  quoteStrategyUsed?: string | null;
+  dailyBarsLastSuccessAt?: string | null;
+  dailyBarsLastFailureAt?: string | null;
+  minuteBarsLastSuccessAt?: string | null;
+  minuteBarsLastFailureAt?: string | null;
 };
 
 const akshareCapabilities = {
@@ -57,8 +66,13 @@ export class AkShareProvider implements MarketDataProvider {
     return normalizeAkShareQuoteResponse(payload);
   }
 
-  async getDailyBars(code: string): Promise<MarketDailyBar[]> {
-    const payload = await this.client.get<MarketDailyBar[]>(`/stocks/${code}/daily-bars`);
+  async getDailyBars(code: string, options: DailyBarOptions = {}): Promise<MarketDailyBar[]> {
+    const params = new URLSearchParams({
+      adjust: options.adjust ?? "none",
+    });
+    if (options.start) params.set("start", options.start);
+    if (options.end) params.set("end", options.end);
+    const payload = await this.client.get<MarketDailyBar[]>(`/stocks/${code}/daily-bars?${params.toString()}`);
     return normalizeAkShareDailyBarsResponse(payload);
   }
 
@@ -89,6 +103,16 @@ export class AkShareProvider implements MarketDataProvider {
         lastSuccessAt?: string | null;
         cache?: unknown;
         disclaimer?: string;
+        quoteLastSuccessAt?: string | null;
+        quoteLastFailureAt?: string | null;
+        quoteConsecutiveFailures?: number;
+        quoteCircuitState?: string;
+        quoteLastStrategyUsed?: string | null;
+        quoteStrategyUsed?: string | null;
+        dailyBarsLastSuccessAt?: string | null;
+        dailyBarsLastFailureAt?: string | null;
+        minuteBarsLastSuccessAt?: string | null;
+        minuteBarsLastFailureAt?: string | null;
       }>("/health");
       return {
         ok: payload.data.ok,
@@ -100,6 +124,15 @@ export class AkShareProvider implements MarketDataProvider {
         lastSuccessAt: payload.data.lastSuccessAt,
         cache: payload.data.cache,
         disclaimer: payload.data.disclaimer,
+        quoteLastSuccessAt: payload.data.quoteLastSuccessAt,
+        quoteLastFailureAt: payload.data.quoteLastFailureAt,
+        quoteConsecutiveFailures: payload.data.quoteConsecutiveFailures,
+        quoteCircuitState: payload.data.quoteCircuitState,
+        quoteStrategyUsed: payload.data.quoteStrategyUsed ?? payload.data.quoteLastStrategyUsed ?? null,
+        dailyBarsLastSuccessAt: payload.data.dailyBarsLastSuccessAt,
+        dailyBarsLastFailureAt: payload.data.dailyBarsLastFailureAt,
+        minuteBarsLastSuccessAt: payload.data.minuteBarsLastSuccessAt,
+        minuteBarsLastFailureAt: payload.data.minuteBarsLastFailureAt,
       };
     } catch {
       return {

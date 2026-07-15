@@ -14,6 +14,9 @@ import { MarketDataCache } from "./market-data-cache";
 import { assertAllowedStockCode, MarketDataError } from "./market-data-errors";
 import { getProvider } from "./provider-registry";
 import { getMinuteCacheTtlMs, getQuoteCacheTtlMs } from "./cache-policy";
+import type { MarketDataRepository } from "../market-storage/market-data-repository";
+import { PrismaMarketDataRepository } from "../market-storage/prisma-market-data-repository";
+import { fromStoredDailyBar, fromStoredMinuteBar } from "../market-storage/market-data-mappers";
 
 function getCacheTtlMs(): number {
   return getQuoteCacheTtlMs(getTradingSession());
@@ -32,6 +35,8 @@ function metaFromData(
     mode,
     isReplay: mode === "replay",
     delayedSeconds: Math.max(0, Math.round((Date.now() - new Date(data.marketTimestamp).getTime()) / 1000)),
+    strategyUsed: "strategyUsed" in data ? data.strategyUsed ?? null : null,
+    upstreamErrorCode: "upstreamErrorCode" in data ? data.upstreamErrorCode ?? null : null,
   };
 }
 
@@ -47,10 +52,12 @@ export class MarketDataService {
   private readonly provider: MarketDataProvider;
   private readonly cache = new MarketDataCache();
   private readonly cacheTtlMs?: number;
+  private readonly repository: MarketDataRepository;
 
-  constructor(options: { provider?: MarketDataProvider; cacheTtlMs?: number } = {}) {
+  constructor(options: { provider?: MarketDataProvider; cacheTtlMs?: number; repository?: MarketDataRepository } = {}) {
     this.provider = options.provider ?? getProvider();
     this.cacheTtlMs = options.cacheTtlMs;
+    this.repository = options.repository ?? new PrismaMarketDataRepository();
   }
 
   async getQuote(code: string): Promise<MarketDataResult<StockQuote>> {
@@ -64,7 +71,7 @@ export class MarketDataService {
       const fallback = this.cache.getLastSuccess<StockQuote>(key);
       if (fallback) {
         const data = staleQuote(fallback);
-        return { success: true, data, meta: metaFromData(data) };
+        return { success: true, data, meta: metaFromData(data, this.provider.mode) };
       }
       return this.failure(error);
     }
@@ -85,6 +92,24 @@ export class MarketDataService {
           : { source: this.provider.source, status: "unavailable", marketTimestamp: null, receivedAt: new Date().toISOString(), isDemo: this.provider.mode === "mock" },
       };
     } catch (error) {
+      const key = `quotes:${codes.join(",")}`;
+      const fallback = this.cache.getLastSuccess<StockQuote[]>(key);
+      if (fallback) {
+        const data = fallback.map(staleQuote);
+        const first = data[0];
+        return {
+          success: true,
+          data,
+          meta: first ? metaFromData(first, this.provider.mode) : {
+            source: this.provider.source,
+            status: "stale",
+            marketTimestamp: null,
+            receivedAt: new Date().toISOString(),
+            isDemo: this.provider.mode === "mock",
+            mode: this.provider.mode,
+          },
+        };
+      }
       return this.failure(error);
     }
   }
@@ -108,6 +133,22 @@ export class MarketDataService {
         },
       };
     } catch (error) {
+      const stored = await this.repository.getDailyBars({ code, adjustment: "qfq", limit: 300 });
+      if (stored.length > 0) {
+        const data = stored.map(fromStoredDailyBar);
+        return {
+          success: true,
+          data,
+          meta: {
+            source: data[0]?.source ?? this.provider.source,
+            status: "stale",
+            marketTimestamp: data.at(-1)?.date ?? null,
+            receivedAt: new Date().toISOString(),
+            isDemo: false,
+            mode: this.provider.mode,
+          },
+        };
+      }
       return this.failure(error);
     }
   }
@@ -155,6 +196,26 @@ export class MarketDataService {
             isDemo: latest?.isDemo ?? true,
             mode: this.provider.mode,
             isReplay: latest?.isReplay ?? false,
+            delayedSeconds: 0,
+            period: options.period,
+          },
+        };
+      }
+      const stored = await this.repository.getMinuteBars({ code, period: options.period, limit: options.limit ?? 120 });
+      if (stored.length > 0) {
+        const data = stored.map(fromStoredMinuteBar);
+        const latest = data.at(-1);
+        return {
+          success: true,
+          data,
+          meta: {
+            source: latest?.source ?? this.provider.source,
+            status: "stale",
+            marketTimestamp: latest?.timestamp ?? null,
+            receivedAt: latest?.receivedAt ?? new Date().toISOString(),
+            isDemo: false,
+            mode: this.provider.mode,
+            isReplay: false,
             delayedSeconds: 0,
             period: options.period,
           },

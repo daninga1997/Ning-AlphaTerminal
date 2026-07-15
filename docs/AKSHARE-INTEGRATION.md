@@ -43,7 +43,7 @@ Next.js 使用：
 MARKET_DATA_MODE=live
 MARKET_DATA_LIVE_PROVIDER=akshare
 AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
-AKSHARE_SERVICE_TIMEOUT_MS=12000
+AKSHARE_SERVICE_TIMEOUT_MS=30000
 ```
 
 ## 5. AKShare接口映射
@@ -107,6 +107,18 @@ MARKET_DATA_MODE=replay
 ## 12. 未来替换商业Provider
 
 保留 `MarketDataProvider` 接口不变。未来商业 Provider 只需要新增 Provider 实现并在 registry 中选择，不需要修改页面。
+
+## Sprint 10：稳定化边界
+
+当前真实能力：
+
+- Quotes：`stock_zh_a_spot` 新浪公开报价可用，策略名 `sina_spot`。
+- Daily Bars：优先 `stock_zh_a_hist`，同步后写入 `DailyMarketBar`。
+- Minute Bars：优先 `stock_zh_a_hist_min_em`，接口不稳定时读取本地真实 stale 数据。
+- Sectors：东方财富行业/概念板块函数当前上游不稳定，暂使用观察池真实报价代理生成 partial 核心方向快照。
+- Market Overview：暂使用观察池真实报价代理生成 partial 市场概览。
+
+严禁自行拼接东方财富或新浪 URL，严禁把 Mock 数据作为 Live 结论。
 
 ## 13. 公开数据说明
 

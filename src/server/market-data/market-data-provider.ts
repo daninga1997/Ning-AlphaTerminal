@@ -10,6 +10,9 @@ import type {
 
 export type DailyBarOptions = {
   period?: "120d";
+  adjust?: "none" | "qfq" | "hfq";
+  start?: string;
+  end?: string;
 };
 
 export type MinuteBarOptions = {
@@ -36,6 +39,16 @@ export type ProviderHealth = {
   mode: MarketDataMode;
   capabilities: ProviderCapabilities;
   message?: string;
+  quoteLastSuccessAt?: string | null;
+  quoteLastFailureAt?: string | null;
+  quoteConsecutiveFailures?: number;
+  quoteCircuitState?: string;
+  quoteStrategyUsed?: string | null;
+  dailyBarsLastSuccessAt?: string | null;
+  dailyBarsLastFailureAt?: string | null;
+  minuteBarsLastSuccessAt?: string | null;
+  minuteBarsLastFailureAt?: string | null;
+  disclaimer?: string;
 };
 
 export interface MarketDataProvider {

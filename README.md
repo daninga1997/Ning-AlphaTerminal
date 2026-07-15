@@ -4,7 +4,7 @@ A 股深圳主板交易观察网页的静态演示项目。
 
 ## 当前阶段
 
-Sprint 7 已完成：Trading Memory V1 交易计划与复盘记忆系统。
+Sprint 10 已完成：Market Data Stabilization V1 本地市场数据仓库、同步任务和能力状态。
 
 已完成：
 
@@ -33,6 +33,10 @@ Sprint 7 已完成：Trading Memory V1 交易计划与复盘记忆系统。
 - Prisma + SQLite 本地交易计划数据库
 - TradingPlan、PlanEvent、PlanReview、SignalSnapshot 数据模型
 - 交易计划状态机、复盘计算、统计与导出 API
+- DailyMarketBar、MinuteMarketBar、StockQuoteSnapshot、SectorDailySnapshot、MarketOverviewSnapshot、DataFetchRun
+- 本地市场数据 Repository
+- Quotes、Daily、Minutes、Sectors、Overview 同步 API
+- 本地同步脚本和收盘固化流程
 
 当前仍未接入：
 
@@ -64,6 +68,12 @@ AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
 ```
 
 AKShare 是公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。
+
+本地市场数据检查：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-market-data.ps1
+```
 
 ## 模拟数据说明
 

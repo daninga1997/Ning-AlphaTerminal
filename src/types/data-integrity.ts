@@ -1,4 +1,4 @@
-import type { MarketDataMode, MarketDataStatus } from "./market-data";
+import type { MarketDataMode } from "./market-data";
 
 // ─── 完整性状态 ────────────────────────────────────────────
 

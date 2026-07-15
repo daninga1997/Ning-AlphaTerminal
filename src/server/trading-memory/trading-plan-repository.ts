@@ -43,7 +43,7 @@ export type SnapshotInput = {
   shortScoreJson: string;
   midScoreJson: string;
   tradeLevelsJson: string;
-  dataStatus: "fresh" | "delayed" | "stale" | "unavailable" | "market_closed" | "historical_replay" | "rate_limited";
+  dataStatus: "fresh" | "delayed" | "stale" | "unavailable" | "partial" | "market_closed" | "historical_replay" | "rate_limited";
   dataSource: string;
   isDemo: boolean;
 };

@@ -4,6 +4,8 @@ import { getLiveProviderConfig } from "@/server/market-data/providers/live/live-
 import { getMarketDataMode, getProvider } from "@/server/market-data/provider-registry";
 import { IntegrityStatusBar } from "@/components/data-integrity/integrity-status-bar";
 import { getLatestExpectedTradingDate, getTradingPhase } from "@/server/trading-calendar/trading-day-resolver";
+import { PrismaMarketDataRepository } from "@/server/market-storage/prisma-market-data-repository";
+import { watchlistCodes } from "@/server/market-sync/sector-mapping";
 
 export default async function SettingsPage() {
   const mode = getMarketDataMode();
@@ -22,6 +24,9 @@ export default async function SettingsPage() {
   let capabilityMatrix: DataCapabilityMatrix | null = null;
   let disclaimer = "Mock/Replay 模式为演示数据；真实行情模式需确认数据来源授权与时效。";
   let providerOk = false;
+  const marketRepository = new PrismaMarketDataRepository();
+  const storageCoverage = await marketRepository.getCoverageSummary(watchlistCodes);
+  const syncHealth = await marketRepository.getFetchHealthSummary();
 
   try {
     const provider = getProvider(mode);
@@ -125,6 +130,67 @@ export default async function SettingsPage() {
           </section>
         ) : null}
 
+        <section className="rounded-lg border border-[#252A33] bg-[#111318] p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#586174]">
+            Storage Capability Matrix
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <StorageMetric
+              title="Quotes"
+              rows={[
+                ["supported", "true"],
+                ["healthy", storageCoverage.quotes.codeCount > 0 ? "true" : "false"],
+                ["strategyUsed", capabilityMatrix?.quotes.strategyUsed ?? "-"],
+                ["lastSuccessAt", storageCoverage.quotes.lastSuccessAt?.toISOString() ?? "-"],
+                ["successRate24h", `${syncHealth.find((item) => item.dataType === "quotes")?.successRate24h ?? 0}%`],
+              ]}
+            />
+            <StorageMetric
+              title="Daily Bars"
+              rows={[
+                ["supported", "true"],
+                ["healthy", storageCoverage.dailyBars.coverageDays >= 250 ? "true" : "false"],
+                ["latestTradingDate", storageCoverage.dailyBars.latestTradingDate ?? "-"],
+                ["coverageDays", String(storageCoverage.dailyBars.coverageDays)],
+                ["lastSuccessAt", storageCoverage.dailyBars.lastSuccessAt?.toISOString() ?? "-"],
+              ]}
+            />
+            <StorageMetric
+              title="Minute Bars"
+              rows={[
+                ["supported", "true"],
+                ["healthy", storageCoverage.minuteBars.completenessPercent >= 80 ? "true" : "false"],
+                ["supportedPeriods", capabilityMatrix?.minuteBars.supported ? "1m,5m,15m,30m,60m" : "-"],
+                ["latestMinuteTimestamp", storageCoverage.minuteBars.latestMinuteTimestamp?.toISOString() ?? "-"],
+                ["completenessPercent", `${storageCoverage.minuteBars.completenessPercent}%`],
+                ["lastSuccessAt", storageCoverage.minuteBars.lastSuccessAt?.toISOString() ?? "-"],
+              ]}
+            />
+            <StorageMetric
+              title="Sectors"
+              rows={[
+                ["supported", "true"],
+                ["healthy", storageCoverage.sectors.sectorCount > 0 ? "true" : "false"],
+                ["sectorCount", String(storageCoverage.sectors.sectorCount)],
+                ["latestTradingDate", storageCoverage.sectors.latestTradingDate ?? "-"],
+                ["lastSuccessAt", storageCoverage.sectors.lastSuccessAt?.toISOString() ?? "-"],
+              ]}
+            />
+            <StorageMetric
+              title="Market Overview"
+              rows={[
+                ["supported", "true"],
+                ["healthy", storageCoverage.marketOverview.latestTradingDate ? "true" : "false"],
+                ["latestTradingDate", storageCoverage.marketOverview.latestTradingDate ?? "-"],
+                ["lastSuccessAt", storageCoverage.marketOverview.lastSuccessAt?.toISOString() ?? "-"],
+              ]}
+            />
+          </div>
+          <p className="mt-4 text-xs leading-5 text-[#8B95A7]">
+            公开数据接口不等同于交易所或券商专业行情；数据不完整时，交易权限保持受限。
+          </p>
+        </section>
+
         <section className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
           {disclaimer}
         </section>
@@ -138,6 +204,22 @@ function SettingMetric({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-[#252A33] bg-[#111318] p-4">
       <div className="text-xs text-[#8B95A7]">{label}</div>
       <div className="mt-2 text-base font-semibold text-[#F4F7FB]">{value}</div>
+    </div>
+  );
+}
+
+function StorageMetric({ title, rows }: { title: string; rows: Array<[string, string]> }) {
+  return (
+    <div className="rounded-lg border border-[#252A33] bg-[#090A0D] p-4">
+      <h2 className="text-sm font-semibold text-[#F4F7FB]">{title}</h2>
+      <div className="mt-3 space-y-1 text-xs leading-5 text-[#8B95A7]">
+        {rows.map(([label, value]) => (
+          <div className="flex justify-between gap-3" key={label}>
+            <span>{label}</span>
+            <span className="text-right text-[#DCE4F0]">{value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

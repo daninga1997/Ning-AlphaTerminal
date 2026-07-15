@@ -11,6 +11,9 @@ type AkShareMeta = {
   market_timestamp?: string | null;
   received_at?: string;
   is_demo?: boolean;
+  strategyUsed?: string | null;
+  attemptedStrategies?: Array<Record<string, unknown>>;
+  upstreamErrorCode?: string | null;
 };
 
 type AkSharePayload<T> = {
@@ -25,6 +28,8 @@ export function normalizeAkShareQuoteResponse(payload: AkSharePayload<StockQuote
     status: quote.status ?? payload.meta?.status ?? "unavailable",
     source: quote.source ?? payload.meta?.source ?? "akshare",
     isDemo: quote.isDemo ?? false,
+    strategyUsed: quote.strategyUsed ?? payload.meta?.strategyUsed ?? null,
+    upstreamErrorCode: quote.upstreamErrorCode ?? payload.meta?.upstreamErrorCode ?? null,
   }));
 }
 

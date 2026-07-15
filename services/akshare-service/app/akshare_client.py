@@ -28,22 +28,50 @@ class AkShareClient:
   def __init__(self, settings: Settings):
     self.settings = settings
 
-  async def _run(self, fn, *args, **kwargs):
+  async def _run(self, fn, *args, timeout: int | None = None, **kwargs):
     try:
       return await asyncio.wait_for(
         asyncio.to_thread(fn, *args, **kwargs),
-        timeout=self.settings.request_timeout_seconds,
+        timeout=timeout or self.settings.request_timeout_seconds,
       )
     except Exception as error:
       raise normalize_error(error) from error
 
+  async def _run_with_retry(self, fn, *args, max_retries: int = 2, timeout: int | None = None, **kwargs):
+    """带指数退避重试的_run，用于东方财富等不稳定接口"""
+    import time as _time
+    last_error = None
+    for attempt in range(max_retries + 1):
+      try:
+        return await asyncio.wait_for(
+          asyncio.to_thread(fn, *args, **kwargs),
+          timeout=timeout or max(self.settings.request_timeout_seconds, 20),
+        )
+      except Exception as error:
+        last_error = error
+        if attempt < max_retries:
+          wait_seconds = 2 ** attempt + 1
+          await asyncio.sleep(wait_seconds)
+    raise normalize_error(last_error) from last_error
+
   async def get_spot_quotes(self, codes: list[str]) -> pd.DataFrame:
     for code in codes:
       validate_stock_code(code)
+    frame = await self.get_spot_quotes_em()
+    return frame[frame["代码"].astype(str).isin(codes)].copy()
+
+  async def get_spot_quotes_em(self) -> pd.DataFrame:
+    import akshare as ak
+    return await self._run_with_retry(ak.stock_zh_a_spot_em, max_retries=1, timeout=12)
+
+  async def get_spot_quotes_em_async(self) -> pd.DataFrame:
+    import akshare as ak
+    return await self._run_with_retry(ak.stock_zh_a_spot_em_async, max_retries=1, timeout=12)
+
+  async def get_spot_quotes_sina(self) -> pd.DataFrame:
     import akshare as ak
 
-    frame = await self._run(ak.stock_zh_a_spot_em)
-    return frame[frame["代码"].astype(str).isin(codes)].copy()
+    return await self._run(ak.stock_zh_a_spot, timeout=max(self.settings.request_timeout_seconds, 25))
 
   async def get_daily_bars(
     self,

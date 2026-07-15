@@ -50,6 +50,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local strategy experiments outside Alpha Terminal sprint scope
+/scripts/em_test2.txt
+/tests/
+/*PTrade_V2.py
+
 # env files (can opt-in for committing if needed)
 .env*
 

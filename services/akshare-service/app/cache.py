@@ -56,3 +56,6 @@ class TTLCache:
       "entries": len(self._entries),
       "lastSuccessEntries": len(self._last_success),
     }
+
+  def get_last_success(self, key: str) -> object | None:
+    return self._last_success.get(key)

@@ -1,11 +1,12 @@
 import type { StockAnalysis } from "@/types/stock";
 import type { DataCapabilityMatrix } from "../../server/market-data/capability-matrix";
 import { getCapabilityBadgeText, getSourceDisplayName } from "../../server/market-data/capability-matrix";
-import { formatTurnover, getMarketDataMeta, getMarketOverview } from "./dashboard-view-model";
+import type { StoredMarketOverviewSnapshot } from "@/server/market-storage/market-data-repository";
+import { formatTurnover, getMarketDataMeta, getMarketOverview, getStoredMarketOverview } from "./dashboard-view-model";
 import { MetricCard, SectionTitle } from "./dashboard-primitives";
 
-export function MarketOverview({ capabilityMatrix, stocks }: { capabilityMatrix?: DataCapabilityMatrix; stocks: StockAnalysis[] }) {
-  const overview = getMarketOverview(stocks);
+export function MarketOverview({ capabilityMatrix, stocks, storedMarketOverview }: { capabilityMatrix?: DataCapabilityMatrix; stocks: StockAnalysis[]; storedMarketOverview?: StoredMarketOverviewSnapshot | null }) {
+  const overview = getStoredMarketOverview(storedMarketOverview ?? null) ?? getMarketOverview(stocks);
   const meta = getMarketDataMeta(stocks);
   const quoteCapability = capabilityMatrix?.quotes;
 
@@ -38,9 +39,9 @@ export function MarketOverview({ capabilityMatrix, stocks }: { capabilityMatrix?
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <MetricCard label="市场情绪" tone="good" value={overview.sentiment} />
         <MetricCard label="建议仓位" tone="warn" value={overview.suggestedPosition} />
-        <MetricCard label="上涨家数（模拟）" value={`${overview.risingCount} 只`} />
-        <MetricCard label="下跌家数（模拟）" value={`${overview.fallingCount} 只`} />
-        <MetricCard label="成交额（模拟）" value={formatTurnover(overview.turnover)} />
+        <MetricCard label={`上涨家数${overview.status ? `（${overview.status}）` : ""}`} value={`${overview.risingCount} 只`} />
+        <MetricCard label={`下跌家数${overview.status ? `（${overview.status}）` : ""}`} value={`${overview.fallingCount} 只`} />
+        <MetricCard label={`成交额${overview.source ? "（真实/partial）" : "（模拟）"}`} value={formatTurnover(overview.turnover)} />
         <MetricCard label="数据更新时间" value={overview.updatedAt} />
       </div>
     </section>
