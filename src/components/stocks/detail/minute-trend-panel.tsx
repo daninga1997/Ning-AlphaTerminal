@@ -42,12 +42,14 @@ export function getMinuteTrendMetrics(bars: MinuteBar[]): MinuteTrendMetrics {
 
 export function MinuteTrendPanel({ code }: { code: string }) {
   const [period, setPeriod] = useState<"1m" | "5m">("1m");
+  const [mode, setMode] = useState<"live" | "replay">("live");
   const [response, setResponse] = useState<MinuteApiResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const result = await fetch(`/api/market/stocks/${code}/minutes?period=${period}&limit=120`, {
+      const replayParam = mode === "replay" ? "&mode=replay" : "";
+      const result = await fetch(`/api/market/stocks/${code}/minutes?period=${period}&limit=120${replayParam}`, {
         cache: "no-store",
       });
       const json = (await result.json()) as MinuteApiResponse;
@@ -57,7 +59,7 @@ export function MinuteTrendPanel({ code }: { code: string }) {
     return () => {
       cancelled = true;
     };
-  }, [code, period]);
+  }, [code, mode, period]);
 
   const { latest, high, low, chartData } = useMemo(
     () => getMinuteTrendMetrics(response?.data ?? []),
@@ -75,6 +77,28 @@ export function MinuteTrendPanel({ code }: { code: string }) {
           <p className="mt-1 text-sm text-[#8B95A7]">用于趋势、量能和突破确认，不单独生成买入结论。</p>
         </div>
         <div className="flex gap-2">
+          <button
+            className={`h-8 rounded-md border px-3 text-xs font-semibold ${
+              mode === "live"
+                ? "border-[#4F8CFF]/40 bg-[#1D2633] text-[#F4F7FB]"
+                : "border-[#252A33] bg-[#090A0D] text-[#8B95A7]"
+            }`}
+            onClick={() => setMode("live")}
+            type="button"
+          >
+            Live
+          </button>
+          <button
+            className={`h-8 rounded-md border px-3 text-xs font-semibold ${
+              mode === "replay"
+                ? "border-[#4F8CFF]/40 bg-[#1D2633] text-[#F4F7FB]"
+                : "border-[#252A33] bg-[#090A0D] text-[#8B95A7]"
+            }`}
+            onClick={() => setMode("replay")}
+            type="button"
+          >
+            Replay
+          </button>
           {(["1m", "5m"] as const).map((item) => (
             <button
               className={`h-8 rounded-md border px-3 text-xs font-semibold ${
@@ -91,6 +115,12 @@ export function MinuteTrendPanel({ code }: { code: string }) {
           ))}
         </div>
       </div>
+
+      {response && !response.success ? (
+        <div className="mt-4 rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-sm leading-6 text-amber-100">
+          当前真实分钟数据不可用。未使用 Mock 分钟图伪装真实行情；可切换到 Replay 查看演示走势。
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
         <Metric label="最新价" value={latest ? latest.close.toFixed(2) : "--"} />

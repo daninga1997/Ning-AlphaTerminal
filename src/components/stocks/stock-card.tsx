@@ -2,11 +2,15 @@ import { memo } from "react";
 import Link from "next/link";
 import type { StockAnalysis } from "@/types/stock";
 import { getSignalPresentation } from "../../lib/presentation/signal-presentation";
+import { getSourceDisplayName } from "../../server/market-data/capability-matrix";
 import { ScoreBadge } from "./score-badge";
 import { getSignalSummary } from "./watchlist-view-model";
 
 export const StockCard = memo(function StockCard({ stock }: { stock: StockAnalysis }) {
   const signal = getSignalPresentation(stock.signal);
+  const meta = stock.marketDataMeta;
+  const quoteUnavailable = meta?.status === "unavailable";
+  const quoteStale = meta?.status === "stale";
 
   return (
     <Link
@@ -31,6 +35,26 @@ export const StockCard = memo(function StockCard({ stock }: { stock: StockAnalys
         <ScoreBadge label="综" score={stock.totalScore} />
         <ScoreBadge label="短" score={stock.shortTermScore.total} />
         <ScoreBadge label="中" score={stock.midTermScore.total} />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-[#252A33] bg-[#090A0D] p-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#586174]">
+              Quote
+            </div>
+            <div className="mt-1 font-mono text-xl font-semibold text-[#F4F7FB]">
+              {quoteUnavailable ? "报价不可用" : stock.currentPrice.toFixed(2)}
+            </div>
+          </div>
+          <div className={`font-mono text-sm font-semibold ${stock.changePercent >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+            {quoteUnavailable ? "--" : `${stock.changePercent.toFixed(2)}%`}
+          </div>
+        </div>
+        <div className="mt-2 text-xs leading-5 text-[#8B95A7]">
+          {quoteStale ? "stale · " : ""}
+          {getSourceDisplayName(meta?.source)} · {meta?.strategyUsed ?? "unavailable"}
+        </div>
       </div>
 
       <div className="mt-4 flex flex-1 flex-col justify-between gap-4">

@@ -20,7 +20,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0d1118] px-4 py-5 lg:block">
       <div className="mb-8">
-        <div className="text-sm text-slate-400">AStock Terminal</div>
+        <div className="text-sm text-slate-400">A股交易终端</div>
         <h1 className="mt-2 text-xl font-semibold text-white">深圳主板观察台</h1>
       </div>
       <nav className="space-y-1">

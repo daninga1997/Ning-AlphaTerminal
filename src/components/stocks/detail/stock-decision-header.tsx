@@ -38,6 +38,11 @@ export function StockDecisionHeader({ stock }: { stock: StockAnalysis }) {
               {meta.delayedSeconds ?? 0}s · 市场时间 {meta.marketTimestamp} · 系统接收 {meta.receivedAt}
             </p>
           ) : null}
+          {stock.dataCapabilityWarning ? (
+            <p className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+              {stock.dataCapabilityWarning} 当前不生成新的短线 buy 信号，建仓区、止损和目标位仅保留历史/演示快照计算时间。
+            </p>
+          ) : null}
           <p className="mt-5 max-w-3xl text-base leading-7 text-[#DCE4F0]">{decision.summary}</p>
         </div>
 

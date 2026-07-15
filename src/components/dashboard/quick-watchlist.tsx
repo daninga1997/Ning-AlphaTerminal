@@ -7,7 +7,7 @@ export function QuickWatchlist({ stocks }: { stocks: StockAnalysis[] }) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#111722] p-4">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <SectionTitle eyebrow="Quick Watchlist" title="观察池 Top10" />
+        <SectionTitle eyebrow="观察池" title="观察池 Top10" />
         <Link className="text-xs font-medium text-cyan-100 hover:text-white" href="/watchlist">
           全部观察池
         </Link>

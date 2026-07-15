@@ -4,7 +4,7 @@ import { SectionTitle } from "./dashboard-primitives";
 export function HotSectors({ sectors }: { sectors: SectorPulse[] }) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#111722] p-4">
-      <SectionTitle eyebrow="Hot Sectors" title="主线板块" />
+      <SectionTitle eyebrow="主线板块" title="主线板块" />
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         {sectors.map((sector) => (
           <div className="min-h-[118px] rounded-lg border border-white/10 bg-white/[0.03] p-4" key={sector.name}>

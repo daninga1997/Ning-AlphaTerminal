@@ -8,7 +8,7 @@ export function TodayWatch({ stocks }: { stocks: StockAnalysis[] }) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#111722] p-4">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <SectionTitle eyebrow="Today's Watch" title="B 级机会" />
+        <SectionTitle eyebrow="今日观察" title="B 级机会" />
         <span className="text-xs text-slate-500">最多 2 只</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">

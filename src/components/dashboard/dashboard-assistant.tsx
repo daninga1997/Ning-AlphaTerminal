@@ -22,7 +22,7 @@ export function DashboardAssistant({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              AI Assistant
+              交易助手
             </p>
             <h2 className="mt-1 text-sm font-semibold text-white">今日交易助手</h2>
           </div>

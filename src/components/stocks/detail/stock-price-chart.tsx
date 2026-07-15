@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import type { DailyBar } from "@/types/market";
+import type { MarketDataMeta } from "@/types/market-data";
 import { calculateSma } from "../../../lib/indicators";
 
 type ChartPoint = {
@@ -39,7 +40,7 @@ export function makeStockPriceChartData(bars: DailyBar[]): ChartPoint[] {
   });
 }
 
-export function StockPriceChart({ bars }: { bars: DailyBar[] }) {
+export function StockPriceChart({ bars, meta }: { bars: DailyBar[]; meta?: MarketDataMeta }) {
   const data = useMemo(() => makeStockPriceChartData(bars), [bars]);
 
   return (
@@ -55,6 +56,11 @@ export function StockPriceChart({ bars }: { bars: DailyBar[] }) {
           120日模拟数据
         </span>
       </div>
+
+      <p className="mt-3 text-xs text-[#8B95A7]">
+        {meta?.isDemo ?? true ? "当前图表为 Replay/Mock 演示历史快照，不是真实分钟行情。" : "当前图表使用真实日线数据。"} ·{" "}
+        {meta?.source ?? "Mock"}
+      </p>
 
       <div className="mt-5 h-[300px] min-w-0 sm:h-[360px]">
         <ResponsiveContainer height="100%" width="100%">

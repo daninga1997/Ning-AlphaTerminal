@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { MarketDataMeta, StockQuote } from "@/types/market-data";
 
 type RefreshState = "idle" | "updating" | "success" | "failed";
 
@@ -27,7 +28,26 @@ export function shouldRefreshQuotes(isVisible: boolean): boolean {
   return isVisible;
 }
 
-export function WatchlistQuoteRefresh({ codes }: { codes: string[] }) {
+type QuoteApiResponse =
+  | {
+      success: true;
+      data: StockQuote[];
+      meta: MarketDataMeta;
+    }
+  | {
+      success: false;
+      error: { code: string; message: string };
+    };
+
+export function WatchlistQuoteRefresh({
+  codes,
+  onFailure,
+  onSuccess,
+}: {
+  codes: string[];
+  onFailure?: () => void;
+  onSuccess?: (payload: { data: StockQuote[]; meta: MarketDataMeta }) => void;
+}) {
   const [state, setState] = useState<RefreshState>("idle");
   const [lastSuccessAt, setLastSuccessAt] = useState<string>("尚未刷新");
   const [coolingDown, setCoolingDown] = useState(false);
@@ -38,13 +58,16 @@ export function WatchlistQuoteRefresh({ codes }: { codes: string[] }) {
     setState("updating");
     try {
       const response = await fetch(buildBatchQuoteUrlFromKey(codesKey), { cache: "no-store" });
-      if (!response.ok) throw new Error("refresh failed");
+      const payload = (await response.json()) as QuoteApiResponse;
+      if (!response.ok || !payload.success) throw new Error("refresh failed");
+      onSuccess?.({ data: payload.data, meta: payload.meta });
       setState("success");
       setLastSuccessAt(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
     } catch {
+      onFailure?.();
       setState("failed");
     }
-  }, [codesKey]);
+  }, [codesKey, onFailure, onSuccess]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => void refresh(), 0);

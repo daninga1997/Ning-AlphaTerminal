@@ -9,7 +9,7 @@ export function TodayDecision({ stock, canGenerateFullPlan = true }: { stock?: S
   return (
     <section className="min-h-[260px] rounded-lg border border-white/10 bg-[#111722] p-5">
       <div className="flex items-start justify-between gap-4">
-        <SectionTitle eyebrow="Today's Decision" title="今日核心决策" />
+        <SectionTitle eyebrow="今日核心决策" title="今日核心决策" />
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-400">
           A 级最多 1 只
         </span>

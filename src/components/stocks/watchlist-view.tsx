@@ -7,27 +7,35 @@ import { filterStocks, getUniqueSectors, sortStocks } from "@/lib/stock-ranking"
 import { StockCard } from "./stock-card";
 import { StockFiltersPanel } from "./stock-filters";
 import { WatchlistQuoteRefresh } from "./watchlist-quote-refresh";
+import { applyQuoteRefreshFailure, mergeQuoteRefreshResult, type QuoteRefreshPayload } from "./watchlist-quotes-model";
 import { getLatestWatchlistUpdate, getWatchlistStatistics } from "./watchlist-view-model";
 
 export function WatchlistView({ stocks }: { stocks: StockAnalysis[] }) {
+  const [liveStocks, setLiveStocks] = useState(stocks);
   const [filters, setFilters] = useState<StockFilters>({
     query: "",
     sector: "all",
     signal: "all",
   });
   const [sortField, setSortField] = useState<StockSortField>("totalScore");
-  const sectors = useMemo(() => getUniqueSectors(stocks), [stocks]);
-  const watchlistCodes = useMemo(() => stocks.map((stock) => stock.code), [stocks]);
+  const sectors = useMemo(() => getUniqueSectors(liveStocks), [liveStocks]);
+  const watchlistCodes = useMemo(() => liveStocks.map((stock) => stock.code), [liveStocks]);
   const visibleStocks = useMemo(
-    () => sortStocks(filterStocks(stocks, filters), sortField),
-    [filters, sortField, stocks],
+    () => sortStocks(filterStocks(liveStocks, filters), sortField),
+    [filters, sortField, liveStocks],
   );
-  const statistics = useMemo(() => getWatchlistStatistics(stocks), [stocks]);
-  const updatedAt = useMemo(() => getLatestWatchlistUpdate(stocks), [stocks]);
-  const marketDataMeta = (stocks[0] as (StockAnalysis & { marketDataMeta?: MarketDataMeta }) | undefined)
+  const statistics = useMemo(() => getWatchlistStatistics(liveStocks), [liveStocks]);
+  const updatedAt = useMemo(() => getLatestWatchlistUpdate(liveStocks), [liveStocks]);
+  const marketDataMeta = (liveStocks[0] as (StockAnalysis & { marketDataMeta?: MarketDataMeta }) | undefined)
     ?.marketDataMeta;
   const handleQueryChange = useCallback((query: string) => {
     setFilters((currentFilters) => ({ ...currentFilters, query }));
+  }, []);
+  const handleQuoteSuccess = useCallback((payload: QuoteRefreshPayload) => {
+    setLiveStocks((currentStocks) => mergeQuoteRefreshResult(currentStocks, payload));
+  }, []);
+  const handleQuoteFailure = useCallback(() => {
+    setLiveStocks((currentStocks) => applyQuoteRefreshFailure(currentStocks));
   }, []);
 
   return (
@@ -65,7 +73,7 @@ export function WatchlistView({ stocks }: { stocks: StockAnalysis[] }) {
           </label>
         </div>
       </section>
-      <WatchlistQuoteRefresh codes={watchlistCodes} />
+      <WatchlistQuoteRefresh codes={watchlistCodes} onFailure={handleQuoteFailure} onSuccess={handleQuoteSuccess} />
 
       <StockFiltersPanel
         filters={filters}

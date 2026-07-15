@@ -24,7 +24,7 @@ export function StockIntegrityCard({ report, compact }: { report: DataIntegrityR
     <div className="rounded-lg border border-white/10 bg-[#111722] p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Data Facts</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">数据事实</p>
           <h3 className="mt-1 text-sm font-semibold text-white">数据事实</h3>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs font-medium ${
