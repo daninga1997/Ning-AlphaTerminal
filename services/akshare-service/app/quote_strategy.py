@@ -36,34 +36,14 @@ class QuoteStrategyResult:
 
 QUOTE_STRATEGIES: tuple[QuoteStrategyCapability, ...] = (
   QuoteStrategyCapability(
-    name="eastmoney_spot",
-    function_name="stock_zh_a_spot_em",
-    source="AKShare stock_zh_a_spot_em",
-    data_range="沪深京A股全市场实时行情",
-    request_shape="全市场批量接口",
+    name="tencent_spot",
+    function_name="qt_gtimg_cn",
+    source="腾讯财经 qt.gtimg.cn",
+    data_range="沪深A股实时行情",
+    request_shape="批量接口",
     is_batch=True,
     max_symbols=20,
-    note="首选批量接口；当前环境上游会主动断开连接时自动降级。",
-  ),
-  QuoteStrategyCapability(
-    name="eastmoney_spot_async",
-    function_name="stock_zh_a_spot_em_async",
-    source="AKShare stock_zh_a_spot_em_async",
-    data_range="沪深京A股全市场实时行情",
-    request_shape="全市场批量接口",
-    is_batch=True,
-    max_symbols=20,
-    note="AKShare公开函数；与首选接口同源，作为第一降级。",
-  ),
-  QuoteStrategyCapability(
-    name="sina_spot",
-    function_name="stock_zh_a_spot",
-    source="AKShare stock_zh_a_spot",
-    data_range="A股全市场实时行情",
-    request_shape="全市场批量接口",
-    is_batch=True,
-    max_symbols=20,
-    note="AKShare公开函数；文档提示重复运行可能被新浪临时限制，必须配合缓存和熔断。",
+    note="实时行情通道：亚秒级响应，支持量比/换手率/买卖盘口。",
   ),
 )
 
@@ -93,24 +73,32 @@ class AkShareQuoteStrategy:
     capabilities: tuple[QuoteStrategyCapability, ...] = QUOTE_STRATEGIES,
   ):
     self.capabilities = capabilities
-    self.fetchers = fetchers or {
-      "eastmoney_spot": client.get_spot_quotes_em,
-      "eastmoney_spot_async": client.get_spot_quotes_em_async,
-      "sina_spot": client.get_spot_quotes_sina,
-    }
+    self.fetchers = fetchers or {}
+
+
+  async def _fetch_tencent(self, codes: list[str]) -> pd.DataFrame:
+    from .multichannel_client import TencentQuoteClient
+    return await TencentQuoteClient.get_quotes(codes)
 
   async def get_quotes(self, codes: list[str]) -> QuoteStrategyResult:
     attempts: list[dict[str, Any]] = []
     last_error_code: str | None = None
+
     for capability in self.capabilities:
-      fetcher = self.fetchers[capability.name]
+      fetcher = self.fetchers.get(capability.name)
       started = time.perf_counter()
       try:
-        frame = await fetcher()
+        if capability.name == "tencent_spot":
+          frame = await self._fetch_tencent(codes)
+        elif fetcher:
+          frame = await fetcher()
+        else:
+          continue
+
         filtered = _filter_frame(frame, codes)
         elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         if filtered.empty:
-          raise AkshareServiceError("NO_DATA", "AKShare未返回请求股票的报价数据", 502)
+          raise AkshareServiceError("NO_DATA", f"{capability.name} 未返回请求股票的报价数据", 502)
         attempts.append(
           {
             "name": capability.name,
@@ -140,9 +128,10 @@ class AkShareQuoteStrategy:
           }
         )
         await asyncio.sleep(0)
+
     raise AkshareServiceError(
       "UPSTREAM_UNAVAILABLE",
-      "AKShare上游报价服务暂不可用",
+      "所有行情通道均不可用",
       502,
       details={
         "strategyUsed": None,

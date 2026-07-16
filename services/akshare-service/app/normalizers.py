@@ -42,10 +42,11 @@ def _validate_ohlc(open_price, high, low, close):
   values = [value for value in [open_price, high, low, close] if value is not None]
   if not values:
     return
-  if high is not None and any(high < value for value in values):
-    raise AkshareServiceError("NORMALIZATION_ERROR", "OHLC逻辑异常：最高价过低", 502)
-  if low is not None and any(low > value for value in values):
-    raise AkshareServiceError("NORMALIZATION_ERROR", "OHLC逻辑异常：最低价过高", 502)
+  # 分钟线数据经常所有价格相同，做宽容处理
+  if high is not None and any(high < value - 0.01 for value in values):
+    raise AkshareServiceError("NORMALIZATION_ERROR", f"OHLC逻辑异常：最高价{high}过低", 502)
+  if low is not None and any(low > value + 0.01 for value in values):
+    raise AkshareServiceError("NORMALIZATION_ERROR", f"OHLC逻辑异常：最低价{low}过高", 502)
 
 
 def _to_shanghai_iso(value: Any) -> str:
