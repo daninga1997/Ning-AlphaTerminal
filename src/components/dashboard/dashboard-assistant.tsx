@@ -27,7 +27,7 @@ export function DashboardAssistant({
             <h2 className="mt-1 text-sm font-semibold text-white">今日交易助手</h2>
           </div>
           <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100">
-            演示数据
+            真实数据
           </span>
         </div>
 

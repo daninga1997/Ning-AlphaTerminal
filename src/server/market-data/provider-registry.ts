@@ -2,8 +2,7 @@ import type { MarketDataMode } from "../../types/market-data";
 import type { MarketDataProvider } from "./market-data-provider";
 import { MarketDataError } from "./market-data-errors";
 import { MockMarketDataProvider } from "./mock-market-data-provider";
-import { AkShareProvider } from "./providers/akshare/akshare-provider";
-import { GenericMinuteProvider } from "./providers/live/generic-minute-provider";
+import { TencentProvider } from "./providers/tencent/tencent-provider";
 import { ReplayMarketDataProvider } from "./providers/replay/replay-market-data-provider";
 
 export function getMarketDataMode(): MarketDataMode {
@@ -15,9 +14,6 @@ export function getMarketDataMode(): MarketDataMode {
 export function getProvider(mode: MarketDataMode = getMarketDataMode()): MarketDataProvider {
   if (mode === "mock") return new MockMarketDataProvider();
   if (mode === "replay") return new ReplayMarketDataProvider();
-  if (mode === "live") {
-    if (process.env.MARKET_DATA_LIVE_PROVIDER === "akshare") return new AkShareProvider();
-    return new GenericMinuteProvider();
-  }
+  if (mode === "live") return new TencentProvider();
   throw new MarketDataError("INVALID_MARKET_DATA_MODE", "MARKET_DATA_MODE配置无效", 500);
 }

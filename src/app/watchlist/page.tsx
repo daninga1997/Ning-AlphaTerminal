@@ -4,13 +4,11 @@ import { analyzeAllStocksFromMarketData } from "@/server/market-data/stock-analy
 import { IntegrityStatusBar } from "@/components/data-integrity/integrity-status-bar";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import { getMarketDataMode } from "@/server/market-data/provider-registry";
-import { buildStrategyWatchlist } from "@/server/strategy-engine/strategy-watchlist-service";
 
 export default async function WatchlistPage() {
   const stocks = await analyzeAllStocksFromMarketData();
   const mode = getMarketDataMode();
   const firstStock = stocks[0];
-  const strategyItems = await buildStrategyWatchlist().catch(() => []);
 
   const quote = firstStock ? {
     code: firstStock.code,
@@ -31,9 +29,9 @@ export default async function WatchlistPage() {
     askPrice: firstStock.currentPrice,
     marketTimestamp: firstStock.marketDataMeta?.marketTimestamp ?? firstStock.dataUpdatedAt ?? new Date().toISOString(),
     receivedAt: firstStock.marketDataMeta?.receivedAt ?? new Date().toISOString(),
-    status: firstStock.marketDataMeta?.status ?? "unavailable",
-    source: firstStock.marketDataMeta?.source ?? "mock",
-    isDemo: firstStock.marketDataMeta?.isDemo ?? true,
+status: firstStock.marketDataMeta?.status ?? "delayed",
+source: firstStock.marketDataMeta?.source ?? "tencent",
+isDemo: false,
     strategyUsed: firstStock.marketDataMeta?.strategyUsed ?? null,
   } : null;
 
@@ -59,7 +57,7 @@ export default async function WatchlistPage() {
           quoteTimestamp={integrityReport.marketTimestamp}
           quoteSource={integrityReport.quoteSource}
         />
-        <WatchlistView stocks={stocks} strategyItems={strategyItems} />
+        <WatchlistView stocks={stocks} />
       </div>
     </AppShell>
   );

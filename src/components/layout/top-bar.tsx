@@ -18,18 +18,15 @@ export function TopBar() {
       .then((d) => {
         const mode = d?.meta?.mode;
         if (mode === "live") {
-          setDataLabel(d.data?.status === "partial" ? "AKShare活跃 · 真实数据" : "真实数据");
-          setDataTimestamp(d.data?.latestTradingDate ?? "");
-        } else if (mode === "mock") {
-          setDataLabel("演示数据");
+          setDataLabel("腾讯行情");
           setDataTimestamp(d.data?.latestTradingDate ?? "");
         } else {
           setDataLabel(mode ?? "未知模式");
-          setDataTimestamp("");
+          setDataTimestamp(d.data?.latestTradingDate ?? "");
         }
       })
       .catch(() => {
-        setDataLabel("AKShare活跃 · 真实数据");
+        setDataLabel("腾讯行情");
         setDataTimestamp("");
       });
   }, []);
@@ -48,11 +45,7 @@ export function TopBar() {
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-white">今日工作台</h2>
-            <span className={`rounded-md border px-2 py-1 text-xs font-medium ${
-              dataLabel.includes("真实") ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" :
-              dataLabel.includes("演示") ? "border-amber-400/25 bg-amber-400/10 text-amber-200" :
-              "border-cyan-400/25 bg-cyan-400/10 text-cyan-100"
-            }`}>
+            <span className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-xs text-emerald-200">
               {dataLabel}
             </span>
           </div>

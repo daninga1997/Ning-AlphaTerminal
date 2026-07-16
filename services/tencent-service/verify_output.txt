@@ -1,0 +1,14 @@
+=== STEP 1: Installing deps ===
+
+=== STEP 2: Running parser tests ===
+
+=== STEP 3: Starting FastAPI ===
+
+=== STEP 4: GET /health ===
+ERROR: HTTP Error 500: Internal Server Error
+
+=== STEP 5: GET /quotes ===
+ERROR: HTTP Error 500: Internal Server Error
+
+=== VERIFICATION COMPLETE ===
+Output saved to: C:\Projects\AlphaTerminal\services\tencent-service\verify_output.txt
