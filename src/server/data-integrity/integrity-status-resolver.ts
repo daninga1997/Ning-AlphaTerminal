@@ -17,7 +17,8 @@ export interface StatusResolverInput {
 export function resolveDataIntegrityStatus(input: StatusResolverInput): DataIntegrityStatus {
   if (input.mode === "mock") return "demo_only";
 
-  if (!input.quoteValid || !input.dailyValid) return "unavailable";
+  if (!input.quoteValid) return "unavailable";
+  if (!input.dailyValid && !input.minuteValid) return "stale";
 
   if (!input.sourceConsistent) return "conflicting";
 

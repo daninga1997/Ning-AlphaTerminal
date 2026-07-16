@@ -11,9 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init_trading_memory",
     "prisma:seed": "prisma db seed",
-    "akshare:service": "powershell -ExecutionPolicy Bypass -File scripts/start-akshare-service.ps1",
-    "akshare:check": "powershell -ExecutionPolicy Bypass -File scripts/check-akshare-service.ps1",
-    "dev:akshare": "powershell -ExecutionPolicy Bypass -File scripts/start-alpha-dev.ps1",
+    "tencent:service": "cd services/tencent-service && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
