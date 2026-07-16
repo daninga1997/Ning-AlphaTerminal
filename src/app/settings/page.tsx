@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   let lastSuccessAt = "-";
   let cacheStatus = "-";
   let capabilityMatrix: DataCapabilityMatrix | null = null;
-  let disclaimer = "Mock/Replay 模式为演示数据；真实行情模式需确认数据来源授权与时效。";
+  let disclaimer = "腾讯财经实时行情数据。公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。";
   let providerOk = false;
   const marketRepository = new PrismaMarketDataRepository();
   const storageCoverage = await marketRepository.getCoverageSummary(watchlistCodes);
@@ -68,7 +68,7 @@ export default async function SettingsPage() {
         <IntegrityStatusBar
           latestTradingDate={latestTradingDate}
           completenessPercent={mode === "live" && providerOk ? 60 : 0}
-          status={mode === "live" ? (providerOk ? "partial" : "unavailable") : "demo_only"}
+          status={mode === "live" ? (providerOk ? "partial" : "unavailable") : "unavailable"}
           permission={mode === "live" ? "watch_only" : "historical_only"}
           canGenerateTradePlan={false}
         />

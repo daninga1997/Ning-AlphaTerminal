@@ -7,7 +7,7 @@ import type {
 } from "@/types/market-data";
 import type { MarketDataProvider, MinuteBarOptions, ProviderHealth } from "../../market-data-provider";
 
-const TENDURE_BASE_URL = process.env.TENDURE_SERVICE_BASE_URL ?? "http://127.0.0.1:8001";
+const TENCENT_BASE_URL = process.env.TENCENT_SERVICE_BASE_URL ?? "http://127.0.0.1:8001";
 
 export class TencentProvider implements MarketDataProvider {
   readonly source = "tencent";
@@ -20,7 +20,7 @@ export class TencentProvider implements MarketDataProvider {
   }
 
   async getQuotes(codes: string[]): Promise<StockQuote[]> {
-    const url = `${TENDURE_BASE_URL}/quotes?codes=${codes.join(",")}`;
+    const url = `${TENCENT_BASE_URL}/quotes?codes=${codes.join(",")}`;
     const resp = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
     const payload = await resp.json();
 
@@ -86,7 +86,7 @@ export class TencentProvider implements MarketDataProvider {
 
   async healthCheck(): Promise<ProviderHealth> {
     try {
-      const resp = await fetch(`${TENDURE_BASE_URL}/health`, {
+      const resp = await fetch(`${TENCENT_BASE_URL}/health`, {
         cache: "no-store",
         signal: AbortSignal.timeout(5000),
       });

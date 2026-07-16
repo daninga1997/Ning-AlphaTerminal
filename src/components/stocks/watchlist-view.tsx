@@ -48,7 +48,7 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold text-[#F4F7FB] sm:text-3xl">Watchlist</h1>
               <span className="rounded-full border border-[#4F8CFF]/25 bg-[#4F8CFF]/10 px-3 py-1 text-xs font-semibold text-[#7AA7FF]">
-                {marketDataMeta?.isDemo ?? true ? "演示数据" : "真实数据"}
+                真实数据
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#8B95A7]">

@@ -4,12 +4,9 @@ import { mockReports } from "@/data/mock-reports";
 import { IntegrityStatusBar } from "@/components/data-integrity/integrity-status-bar";
 import { getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
 import { getMarketDataMode } from "@/server/market-data/provider-registry";
-import { buildStrategyWatchlist } from "@/server/strategy-engine/strategy-watchlist-service";
-
 export default async function ReportsPage() {
   const mode = getMarketDataMode();
   const latestTradingDate = getLatestExpectedTradingDate(new Date());
-  const strategyItems = await buildStrategyWatchlist().catch(() => []);
 
   return (
     <AppShell>
@@ -17,11 +14,11 @@ export default async function ReportsPage() {
         <IntegrityStatusBar
           latestTradingDate={latestTradingDate}
           completenessPercent={0}
-          status={mode === "live" ? "partial" : "demo_only"}
+          status={mode === "live" ? "partial" : "unavailable"}
           permission="historical_only"
           canGenerateTradePlan={false}
         />
-        <ReportsView reports={mockReports} strategyItems={strategyItems} />
+        <ReportsView reports={mockReports} />
       </div>
     </AppShell>
   );

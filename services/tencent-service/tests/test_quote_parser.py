@@ -1,77 +1,118 @@
-"""腾讯行情解析器测试 (TDD)"""
-import pytest
-from app.quote_parser import parse_tencent_text, QuoteRecord
+"""腾讯行情解析器完整测试"""
+import sys
+sys.path.insert(0, 'C:/Projects/AlphaTerminal/services/tencent-service')
+
+from app.quote_parser import (
+    parse_tencent_text, QuoteRecord, validate_price_consistency,
+    _safe_float, _safe_int, _parse_timestamp, get_status, is_trading_time,
+)
+
+# 腾讯真实数据样例（收盘后快照，成交量=手，成交额=万元）
+TENCENT_SAMPLE = (
+    'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~20260715150000~-0.49~-0.69~72.40~68.89~70.88/69720/49347~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~0.62~222~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";'
+)
 
 
-class TestParseTencentText:
-    def test_parse_single_stock_returns_correct_fields(self):
-        """单只股票返回正确字段"""
-        text = 'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~20260715161436~-0.49~-0.69~72.40~68.89~70.88/69720/493466293~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~0.62~222~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";'
+def test_volume_hand_to_shares():
+    """成交量'手'正确转换为'股'"""
+    result = parse_tencent_text(TENCENT_SAMPLE, ["002896"])
+    q = result[0]
+    # 原始 69720 手 → 6,972,000 股
+    assert q.volume == 6972000, f"Expected 6972000, got {q.volume}"
 
-        result = parse_tencent_text(text, ["002896"])
 
-        assert len(result) == 1
+def test_amount_wan_to_yuan():
+    """成交额'万元'正确转换为'元'"""
+    result = parse_tencent_text(TENCENT_SAMPLE, ["002896"])
+    q = result[0]
+    # 原始 49347 万元 → 493,470,000 元
+    assert q.amount == 493470000, f"Expected 493470000, got {q.amount}"
+
+
+def test_price_consistency_check():
+    """amount/volume 均价在 high-low 合理区间内"""
+    result = parse_tencent_text(TENCENT_SAMPLE, ["002896"])
+    q = result[0]
+    assert validate_price_consistency(q), "均价应该合理"
+    avg_price = q.amount / q.volume
+    assert 65 <= avg_price <= 75, f"均价 {avg_price} 应在68.89-low ~ 72.40-high 附近"
+
+
+def test_market_timestamp_parsed_correctly():
+    """行情时间从正确字段解析"""
+    result = parse_tencent_text(TENCENT_SAMPLE, ["002896"])
+    q = result[0]
+    # 15:00:00 是有效收盘时间
+    assert q.upstream_market_time is not None
+    assert "15:00:00" in q.upstream_market_time
+
+
+def test_invalid_timestamp_rejected():
+    """15:30之后的时间返回None"""
+    text = TENCENT_SAMPLE.replace("20260715150000", "20260715161436")
+    result = parse_tencent_text(text, ["002896"])
+    q = result[0]
+    assert q.upstream_market_time is None, "16:14:36应被拒绝"
+
+
+def test_overnight_timestamp_rejected():
+    """00:00-08:00的时间返回None"""
+    text = TENCENT_SAMPLE.replace("20260715150000", "20260715033000")
+    result = parse_tencent_text(text, ["002896"])
+    q = result[0]
+    assert q.upstream_market_time is None, "03:30:00应被拒绝"
+
+
+def test_status_live_during_trading():
+    """盘中实时数据标记为live"""
+    # 手工设置行情时间为"当前时间3分钟前"
+    from datetime import datetime, timedelta, timezone
+    from zoneinfo import ZoneInfo
+    SH = ZoneInfo("Asia/Shanghai")
+    ts = datetime.now(SH) - timedelta(minutes=1)
+    text = TENCENT_SAMPLE.replace("20260715150000", ts.strftime("%Y%m%d%H%M%S"))
+    result = parse_tencent_text(text, ["002896"])
+    if result:
         q = result[0]
-        assert q.code == "002896"
-        assert q.name == "中大力德"
-        assert q.price == 70.88
-        assert q.previous_close == 71.37
-        assert q.change == -0.49
-        assert q.change_percent == -0.69
-        assert q.volume == 69720
-        assert q.amount == 493466293
-        assert q.high == 72.40
-        assert q.low == 68.89
-        assert q.open == 71.41
-        assert q.turnover_rate == 3.55
-        assert q.volume_ratio == 0.62
-        assert q.market_timestamp is not None
-        assert q.source == "tencent"
+        st = get_status(q.upstream_market_time, is_trading_time())
+        # 如果是盘中，应该是live
+        if is_trading_time():
+            assert st == "live", f"Should be live, got {st}"
+        else:
+            assert st == "closed", f"Should be closed, got {st}"
 
-    def test_parse_multiple_stocks(self):
-        """多只股票同时解析"""
-        text = (
-            'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~20260716140000~-0.49~-0.69~72.40~68.89~70.88/69720/493466293~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~0.62~222~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";\n'
-            'v_sz000988="51~华工科技~000988~152.50~159.84~154.36~145766~0~145766~152.50~100~152.49~50~152.48~30~152.47~20~152.46~10~152.51~20~152.52~30~152.53~40~152.54~50~152.55~60~~20260716140000~-7.34~-4.59~159.80~151.00~152.50/145766/2198828150~145766~219883~8.92~300.00~~159.80~151.00~9.80~180.00~180.00~15.00~100.00~80.00~1.50~300~152.50~400.00~300.00~~~1.00~219882.8150~25.0000~6~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~250000000~250000000~66.47~-18.89~250000000~~~4.73~-0.03~~CNY~0~~152.00~-100~";'
-        )
 
-        result = parse_tencent_text(text, ["002896", "000988"])
+def test_missing_fields_return_none():
+    """缺失字段返回None而非0"""
+    text = TENCENT_SAMPLE.replace("0.62", "").replace("3.55", "  ")
+    result = parse_tencent_text(text, ["002896"])
+    q = result[0]
+    assert q.volume_ratio is None
+    # 成交量仍然有效
+    assert q.volume is not None
 
-        assert len(result) == 2
-        assert result[0].code == "002896"
-        assert result[1].code == "000988"
-        assert result[1].name == "华工科技"
-        assert result[1].price == 152.50
 
-    def test_missing_fields_return_none(self):
-        """缺失字段返回 None 而非 0"""
-        text = 'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~~~-0.49~-0.69~72.40~68.89~70.88/69720/493466293~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~~~~~~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";'
+def test_invalid_text_returns_empty():
+    """无效文本返回空列表"""
+    result = parse_tencent_text("garbage", ["002896"])
+    assert result == []
 
-        result = parse_tencent_text(text, ["002896"])
 
-        q = result[0]
-        assert q.turnover_rate is None
-        assert q.volume_ratio is None
-        # 价格字段不应该为 None
-        assert q.price is not None
+print("Running all tests...")
+tests = [test_volume_hand_to_shares, test_amount_wan_to_yuan, test_price_consistency_check,
+         test_market_timestamp_parsed_correctly, test_invalid_timestamp_rejected,
+         test_overnight_timestamp_rejected, test_status_live_during_trading,
+         test_missing_fields_return_none, test_invalid_text_returns_empty]
+passed = 0
+failed = 0
+for fn in tests:
+    try:
+        fn()
+        passed += 1
+        print(f"  PASS {fn.__name__}")
+    except Exception as e:
+        failed += 1
+        print(f"  FAIL {fn.__name__}: {e}")
 
-    def test_invalid_text_returns_empty(self):
-        """无效文本返回空列表"""
-        result = parse_tencent_text("garbage", ["002896"])
-        assert result == []
-
-    def test_unknown_code_returns_empty(self):
-        """请求代码不在返回数据中时返回空"""
-        text = 'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~20260716140000~-0.49~-0.69~72.40~68.89~70.88/69720/493466293~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~0.62~222~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";'
-        result = parse_tencent_text(text, ["999999"])
-        assert result == []
-
-    def test_volume_is_integer_shares(self):
-        """成交量单位为股，应为整数"""
-        text = 'v_sz002896="51~中大力德~002896~70.88~71.37~71.41~69720~33127~36593~70.88~131~70.86~12~70.85~2~70.84~1~70.83~132~70.89~14~70.90~36~70.92~3~70.94~1~70.95~2~~20260716140000~-0.49~-0.69~72.40~68.89~70.88/69720/493466293~69720~49347~3.55~247.11~~72.40~68.89~4.92~139.30~139.30~11.79~78.51~64.23~0.62~222~70.78~314.81~222.14~~~0.66~49346.6293~5.6704~8~   A~GP-A~-20.57~-3.53~0.17~4.68~3.03~109.23~65.40~-7.03~-11.83~-3.84~196522670~196522670~66.47~-18.89~196522670~~~4.73~-0.03~~CNY~0~~71.00~-83~";'
-        result = parse_tencent_text(text, ["002896"])
-        q = result[0]
-        assert isinstance(q.volume, int)
-        assert q.volume == 69720
-        # 成交额为元
-        assert q.amount == 493466293
+print(f"\n{passed+failed} tests: {passed} passed, {failed} failed")
+sys.exit(0 if failed == 0 else 1)

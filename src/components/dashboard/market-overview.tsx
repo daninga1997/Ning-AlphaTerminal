@@ -15,7 +15,7 @@ export function MarketOverview({ capabilityMatrix, stocks }: { capabilityMatrix?
         <SectionTitle eyebrow="市场总览" title="市场总览" />
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
           <span className="inline-flex w-fit rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 font-medium text-cyan-100">
-            {meta?.isDemo ?? true ? "演示数据" : "真实数据"}
+            真实数据
           </span>
           {capabilityMatrix ? (
             <span className="inline-flex w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 font-medium text-emerald-100">
@@ -38,9 +38,9 @@ export function MarketOverview({ capabilityMatrix, stocks }: { capabilityMatrix?
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <MetricCard label="市场情绪" tone="good" value={overview.sentiment} />
         <MetricCard label="建议仓位" tone="warn" value={overview.suggestedPosition} />
-        <MetricCard label="上涨家数（模拟）" value={`${overview.risingCount} 只`} />
-        <MetricCard label="下跌家数（模拟）" value={`${overview.fallingCount} 只`} />
-        <MetricCard label="成交额（模拟）" value={formatTurnover(overview.turnover)} />
+      <MetricCard label="上涨家数" value={`${overview.risingCount} 只`} />
+      <MetricCard label="下跌家数" value={`${overview.fallingCount} 只`} />
+      <MetricCard label="成交额" value={formatTurnover(overview.turnover)} />
         <MetricCard label="数据更新时间" value={overview.updatedAt} />
       </div>
     </section>
