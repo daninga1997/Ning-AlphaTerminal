@@ -65,11 +65,11 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
           </div>
 
           <label className="block">
-            <span className="sr-only">搜索股票名称或代码</span>
+            <span className="sr-only">筛选当前 20 只观察池</span>
             <input
               className="h-11 w-full rounded-md border border-[#252A33] bg-[#090A0D] px-4 text-sm text-[#F4F7FB] outline-none transition placeholder:text-[#586174] focus:border-[#7AA7FF]"
               onChange={(event) => handleQueryChange(event.target.value)}
-              placeholder="搜索股票名称或代码，例如 002472"
+              placeholder="筛选当前 20 只观察池，例如 002472"
               value={filters.query}
             />
           </label>

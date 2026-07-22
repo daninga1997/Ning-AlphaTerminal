@@ -53,9 +53,39 @@ export class TencentProvider implements MarketDataProvider {
     }));
   }
 
-  async getDailyBars(_code: string): Promise<MarketDailyBar[]> {
-    // 日线通过 AKShare stock_zh_a_hist 获取，此Provider仅处理报价
-    return [];
+  async getDailyBars(code: string): Promise<MarketDailyBar[]> {
+    try {
+      const url = `${TENCENT_BASE_URL}/history?symbol=${code}&period=day&count=120`;
+      const resp = await fetch(url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!resp.ok) return [];
+      const payload = await resp.json();
+      if (!Array.isArray(payload?.data) || payload.data.length === 0) return [];
+
+      return payload.data
+        .filter((bar: Record<string, unknown>) =>
+          [bar.open, bar.high, bar.low, bar.close, bar.volume].every(Number.isFinite),
+        )
+        .map((bar: Record<string, unknown>) => ({
+          code,
+          date: String(bar.time ?? ""),
+          open: Number(bar.open),
+          high: Number(bar.high),
+          low: Number(bar.low),
+          close: Number(bar.close),
+          previousClose: Number(bar.open),
+          volume: Number(bar.volume),
+          amount: Number(bar.close) * Number(bar.volume),
+          turnoverRate: 0,
+          source: "tencent" as const,
+          status: "delayed" as const,
+          isDemo: false,
+        }));
+    } catch {
+      return [];
+    }
   }
 
   async getMinuteBars(_code: string, _options: MinuteBarOptions): Promise<MinuteBar[]> {
@@ -95,9 +125,15 @@ export class TencentProvider implements MarketDataProvider {
         ok: payload.status === "healthy" || payload.status === "starting",
         source: "tencent",
         mode: "live",
+        quoteLastSuccessAt: typeof payload.last_success_at === "string" ? payload.last_success_at : null,
+        quoteLastFailureAt: typeof payload.last_failure_at === "string" ? payload.last_failure_at : null,
+        dailyBarsLastSuccessAt:
+          typeof payload.daily_bars_last_success_at === "string" ? payload.daily_bars_last_success_at : null,
+        dailyBarsLastFailureAt:
+          typeof payload.daily_bars_last_failure_at === "string" ? payload.daily_bars_last_failure_at : null,
         capabilities: {
           supportsQuotes: true,
-          supportsDailyBars: false,
+          supportsDailyBars: true,
           supportsMinuteBars: false,
           supportsSectors: false,
           supportsMarketOverview: false,
@@ -114,7 +150,7 @@ export class TencentProvider implements MarketDataProvider {
         mode: "live",
         capabilities: {
           supportsQuotes: true,
-          supportsDailyBars: false,
+          supportsDailyBars: true,
           supportsMinuteBars: false,
           supportsSectors: false,
           supportsMarketOverview: false,

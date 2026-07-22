@@ -10,7 +10,7 @@ export default function StockNotFound() {
         </p>
         <h1 className="mt-3 text-2xl font-semibold text-[#F4F7FB]">股票不存在</h1>
         <p className="mt-3 text-sm leading-6 text-[#8B95A7]">
-          当前代码不在 Alpha Terminal 的 Mock 观察池中，因此不会显示任意错误股票数据。
+          代码不存在、并非深圳主板，或当前无法取得真实研究数据，因此不会显示任意错误股票数据。
         </p>
         <Link
           className="mt-6 inline-flex h-10 items-center rounded-md border border-[#252A33] bg-[#090A0D] px-4 text-sm font-semibold text-[#F4F7FB] hover:border-[#4F8CFF]/40"

@@ -53,7 +53,7 @@ export function StockPriceChart({ bars, meta }: { bars: DailyBar[]; meta?: Marke
           <h2 className="mt-1 text-lg font-semibold text-[#F4F7FB]">价格走势</h2>
         </div>
         <span className="w-fit rounded-full border border-[#4F8CFF]/25 bg-[#4F8CFF]/10 px-3 py-1 text-xs font-semibold text-[#7AA7FF]">
-          120日模拟数据
+          {meta?.isDemo ?? true ? "120日模拟数据" : `${bars.length}日真实日线`}
         </span>
       </div>
 

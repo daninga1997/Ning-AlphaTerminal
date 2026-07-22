@@ -121,7 +121,7 @@ export class MarketDataService {
         data,
         meta: {
           source: data[0]?.source ?? this.provider.source,
-          status: data.length > 0 ? "fresh" : "unavailable",
+          status: data.at(-1)?.status ?? (data.length > 0 ? "fresh" : "unavailable"),
           marketTimestamp: data.at(-1)?.date ?? null,
           receivedAt: new Date().toISOString(),
           isDemo: data[0]?.isDemo ?? this.provider.mode === "mock",

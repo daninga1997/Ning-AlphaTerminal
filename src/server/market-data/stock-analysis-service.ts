@@ -101,7 +101,10 @@ function quoteToStockAnalysis(
   const riskLevel = deriveRiskLevel(indicators, totalScore);
 
   const technicalInsufficient =
-    meta.isDemo === false && (technicalMeta.status === "unavailable" || technicalMeta.status === "stale");
+    meta.isDemo === false &&
+    (technicalMeta.status === "unavailable" ||
+      technicalMeta.status === "stale" ||
+      technicalMeta.status === "delayed");
   const guard = applyMarketDataSafetyGuard({
     signal: dynamicSignal,
     status: technicalInsufficient ? "stale" : meta.status,
@@ -281,19 +284,19 @@ export async function analyzeAllStocksFromMarketData(): Promise<MarketBackedStoc
   const analyses = await Promise.all(
     quotes.map(async (quote) => {
       const barsResult = await service.getDailyBars(quote.code);
-      const fallbackBars = mockMarketHistory[quote.code] ?? [];
-      const technicalMeta: MarketDataMeta = barsResult.success
-        ? barsResult.meta
-        : {
-            source: "演示历史快照",
-            status: "unavailable",
-            marketTimestamp: fallbackBars.at(-1)?.date ?? null,
-            receivedAt: new Date().toISOString(),
-            isDemo: true,
-            mode: quoteMeta.mode,
-            upstreamErrorCode: barsResult.error.code,
-          };
-      return quoteToStockAnalysis(quote, barsResult.success ? convertBars(barsResult.data) : fallbackBars, quoteMeta, technicalMeta);
+      if (!barsResult.success || barsResult.data.length === 0) {
+        const errorCode = !barsResult.success ? barsResult.error.code : "DAILY_BARS_UNAVAILABLE";
+        return quoteToStockAnalysis(quote, [], quoteMeta, {
+          source: "tencent",
+          status: "unavailable",
+          marketTimestamp: null,
+          receivedAt: new Date().toISOString(),
+          isDemo: false,
+          mode: quoteMeta.mode,
+          upstreamErrorCode: errorCode,
+        });
+      }
+      return quoteToStockAnalysis(quote, convertBars(barsResult.data), quoteMeta, barsResult.meta);
     }),
   );
 

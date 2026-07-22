@@ -38,7 +38,7 @@ export function filterStocks<T extends MockStock>(stocks: T[], filters: StockFil
   });
 }
 
-export function getDemoOpportunities(stocks: StockAnalysis[]): DemoOpportunities {
+export function getOpportunities(stocks: StockAnalysis[]): DemoOpportunities {
   const sorted = sortStocks(stocks, "totalScore");
   const aLevel = sorted
     .filter(
@@ -62,6 +62,8 @@ export function getDemoOpportunities(stocks: StockAnalysis[]): DemoOpportunities
     hasOpportunities: aLevel.length > 0 || bLevel.length > 0,
   };
 }
+
+export const getDemoOpportunities = getOpportunities;
 
 export function getUniqueSectors(stocks: MockStock[]): string[] {
   return Array.from(new Set(stocks.map((stock) => stock.sector)));
