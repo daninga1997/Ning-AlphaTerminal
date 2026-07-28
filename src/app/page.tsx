@@ -6,16 +6,11 @@ import { buildCapabilityMatrix } from "@/server/market-data/capability-matrix";
 import { getMarketDataMode, getProvider } from "@/server/market-data/provider-registry";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import type { DataIntegrityReport } from "@/types/data-integrity";
-import type { StockAnalysis } from "@/types/stock";
 
 export const revalidate = 60;
 
-async function getHomeStocks(): Promise<StockAnalysis[]> {
-  return analyzeAllStocksFromMarketData();
-}
-
 export default async function Home() {
-  const stocks = await getHomeStocks();
+  const stocks = await analyzeAllStocksFromMarketData();
   const mode = getMarketDataMode();
   const provider = getProvider(mode);
   const health = await provider.healthCheck();
@@ -36,6 +31,32 @@ export default async function Home() {
         leaders: [strongestSectorStock.name],
       }
     : undefined;
+
+  // 通过正规 Provider 获取日线用于完整性报告
+  let dailyBarsForReport = null;
+  if (firstStock) {
+    try {
+      const bars = await provider.getDailyBars(firstStock.code);
+      if (bars.length > 0) {
+        dailyBarsForReport = bars.map((b) => ({
+          code: firstStock.code,
+          date: b.date,
+          open: b.open,
+          high: b.high,
+          low: b.low,
+          close: b.close,
+          previousClose: b.open,
+          volume: b.volume,
+          amount: b.amount,
+          turnoverRate: 0,
+          source: b.source ?? "tencent",
+          isDemo: b.isDemo ?? false,
+        }));
+      }
+    } catch {
+      // 日线不可用时保持 null
+    }
+  }
 
   let integrityReport: DataIntegrityReport | null = null;
   try {
@@ -66,7 +87,7 @@ export default async function Home() {
         isDemo: firstStock.marketDataMeta?.isDemo ?? false,
         strategyUsed: firstStock.marketDataMeta?.strategyUsed ?? null,
       } : null,
-      dailyBars: null,
+      dailyBars: dailyBarsForReport,
       minuteBars: null,
       sectors: null,
       marketOverview: null,

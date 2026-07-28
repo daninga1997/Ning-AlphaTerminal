@@ -201,7 +201,7 @@ export async function getStockDetailFromMarketData(
   const quoteMeta: MarketDataMeta = quoteResult.success
     ? quoteResult.meta
     : {
-        source: "AKShare",
+        source: "tencent",
         status: "unavailable",
         marketTimestamp: null,
         receivedAt: new Date().toISOString(),
@@ -265,15 +265,15 @@ export async function analyzeAllStocksFromMarketData(): Promise<MarketBackedStoc
           marketTimestamp: stock.updatedAt,
           receivedAt: new Date().toISOString(),
           status: "unavailable",
-          source: "AKShare",
-          isDemo: true,
+          source: "tencent",
+          isDemo: false,
         }),
       );
   const quoteMeta: MarketDataMeta = quotesResult.success
     ? quotesResult.meta
     : {
-        source: "AKShare",
-        status: "unavailable",
+          source: "tencent",
+          status: "unavailable",
         marketTimestamp: null,
         receivedAt: new Date().toISOString(),
         isDemo: true,

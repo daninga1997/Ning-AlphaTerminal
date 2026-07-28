@@ -280,6 +280,24 @@ model MarketOverviewSnapshot {
   @@index([dataStatus])
 }
 
+model DynamicWatchlistEntry {
+  id                  String   @id @default(cuid())
+  stockCode           String   @map("stock_code")
+  stockName           String   @map("stock_name")
+  sourceType          String   @default("DYNAMIC") @map("source_type")
+  firstAddedAt        DateTime @default(now()) @map("first_added_at")
+  lastAnalyzedAt      DateTime @default(now()) @map("last_analyzed_at")
+  triggerStrategy     String   @map("trigger_strategy")
+  lastStrategyAction  String   @map("last_strategy_action")
+  dataIntegrityStatus String   @default("READY") @map("data_integrity_status")
+  latestConclusion    String?  @map("latest_conclusion")
+  signalValidUntil    DateTime @map("signal_valid_until")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@unique([stockCode, sourceType])
+  @@map("dynamic_watchlist")
+}
+
 model DataFetchRun {
   id                 String    @id @default(cuid())
   dataType           String

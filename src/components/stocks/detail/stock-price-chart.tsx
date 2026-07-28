@@ -61,6 +61,11 @@ export function StockPriceChart({ bars, meta }: { bars: DailyBar[]; meta?: Marke
         {meta?.isDemo ?? true ? "当前图表为 Replay/Mock 演示历史快照，不是真实分钟行情。" : "当前图表使用真实日线数据。"} ·{" "}
         {meta?.source ?? "Mock"}
       </p>
+      {!(meta?.isDemo ?? true) && (
+        <p className="mt-1 text-xs text-[#586174]">
+          📊 数据来源：腾讯财经 | 分钟级数据暂不可用，以日线趋势为准
+        </p>
+      )}
 
       <div className="mt-5 h-[300px] min-w-0 sm:h-[360px]">
         <ResponsiveContainer height="100%" width="100%">

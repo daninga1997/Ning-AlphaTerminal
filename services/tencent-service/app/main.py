@@ -19,7 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .quote_parser import parse_tencent_text, validate_price_consistency, is_trading_time
 from .search_parser import parse_szse_mainboard_hints
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 app = FastAPI(title="Alpha Terminal — Tencent Market Data", version="1.0.0")

@@ -3,6 +3,7 @@ from typing import TypedDict
 
 _HINT_PATTERN = re.compile(r'v_hint="(?P<hints>.*)"', re.DOTALL)
 _SZSE_MAINBOARD = re.compile(r"^(000|001|002)\d{3}$")
+_UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
 
 
 class SearchCandidate(TypedDict):
@@ -10,6 +11,10 @@ class SearchCandidate(TypedDict):
     name: str
     exchange: str
     source: str
+
+
+def _decode_unicode_escapes(value: str) -> str:
+    return _UNICODE_ESCAPE.sub(lambda match: chr(int(match.group(1), 16)), value)
 
 
 def parse_szse_mainboard_hints(payload: str, limit: int = 10) -> list[SearchCandidate]:
@@ -24,7 +29,7 @@ def parse_szse_mainboard_hints(payload: str, limit: int = 10) -> list[SearchCand
         if len(fields) < 3:
             continue
 
-        market, code, name = fields[0].lower(), fields[1], fields[2]
+        market, code, name = fields[0].lower(), fields[1], _decode_unicode_escapes(fields[2])
         if market != "sz" or not _SZSE_MAINBOARD.fullmatch(code) or code in seen:
             continue
 

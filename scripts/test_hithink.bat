@@ -1,0 +1,2 @@
+@echo off
+python -c "import urllib.request,json,sys; r=urllib.request.Request('https://fuyao.aicubes.cn/api/a-share/prices/snapshot?thscodes=002896.SZ'); r.add_header('X-api-key','sk-fuyao-7tVxIKCl1QJw15NtND8Fn2FEdFkdz9-l'); d=json.loads(urllib.request.urlopen(r,timeout=10).read()); print(json.dumps(d,indent=2,ensure_ascii=False)[:500])"
