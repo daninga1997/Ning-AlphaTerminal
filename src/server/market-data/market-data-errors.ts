@@ -9,7 +9,7 @@ export class MarketDataError extends Error {
   }
 }
 
-const allowedStockCodePattern = /^(000|001|002)\d{3}$/;
+const allowedStockCodePattern = /^(000|001|002|003)\d{3}$/;
 
 export function isAllowedStockCode(code: string): boolean {
   return allowedStockCodePattern.test(code);

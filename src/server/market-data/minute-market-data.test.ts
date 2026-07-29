@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MinuteBar } from "../../types/market-data";
 import { MarketDataService } from "./market-data-service";
 import { MarketDataCache } from "./market-data-cache";
@@ -14,6 +14,11 @@ import { assertLiveProviderConfigured } from "./providers/live/live-provider-con
 import { loadReplayMinuteBars } from "./providers/replay/csv-minute-bar-loader";
 import { ReplayClock } from "./providers/replay/replay-clock";
 import { ReplayMarketDataProvider } from "./providers/replay/replay-market-data-provider";
+import { TencentProvider } from "./providers/tencent/tencent-provider";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function bar(overrides: Partial<MinuteBar> = {}): MinuteBar {
   return {
@@ -212,6 +217,10 @@ describe("cache, api and safety", () => {
     expect(() => parseMinuteRequest("603228", new URLSearchParams("period=1m"))).toThrow(MarketDataError);
   });
 
+  it("允许深圳003代码请求分钟线", () => {
+    expect(() => parseMinuteRequest("003001", new URLSearchParams("period=1m"))).not.toThrow();
+  });
+
   it("非法period返回400", () => {
     expect(() => parseMinuteRequest("002472", new URLSearchParams("period=2m"))).toThrow(MarketDataError);
   });
@@ -254,6 +263,28 @@ describe("cache, api and safety", () => {
 
   it("午间休市不能产生分钟确认buy", () => {
     expect(applyMinuteConfirmationGuard({ signal: "buy", minuteStatus: "fresh", tradingSession: "lunch_break" }).signal).toBe("wait");
+  });
+});
+
+describe("Tencent minute status mapping", () => {
+  it("maps the service's closed status to the terminal's market_closed status", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          source: "tencent",
+          status: "closed",
+          received_at: "2026-07-28T15:01:00+08:00",
+          data: [{ time: "2026-07-28T15:00:00+08:00", open: 35.6, close: 35.63, high: 35.64, low: 35.5, volume: 1200 }],
+        }),
+      }),
+    );
+
+    const bars = await new TencentProvider().getMinuteBars("002472", { period: "1m", limit: 1 });
+
+    expect(bars[0]?.status).toBe("market_closed");
   });
 });
 
