@@ -58,3 +58,16 @@ export type BacktestReport = {
   equityCurve: BacktestEquityPoint[];
   trades: BacktestTrade[];
 };
+
+export type BacktestHistoryRequest = {
+  code: string;
+  start: string;
+  end: string;
+};
+
+export type BacktestHistoryResponse = {
+  bars: MarketDailyBar[];
+  source: string;
+  updatedAt: string;
+  returnedTradingDays: number;
+};
