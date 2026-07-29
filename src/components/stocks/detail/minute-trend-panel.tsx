@@ -31,6 +31,20 @@ export type MinuteTrendMetrics = {
   }>;
 };
 
+export const AUTO_REFRESH_INTERVAL_MS = 30_000;
+
+export function shouldAutoRefreshMinute({
+  enabled,
+  mode,
+  status,
+}: {
+  enabled: boolean;
+  mode: "live" | "replay";
+  status: string | undefined;
+}): boolean {
+  return enabled && mode === "live" && (status === "fresh" || status === "stale");
+}
+
 export function getMinuteTrendMetrics(bars: MinuteBar[]): MinuteTrendMetrics {
   return {
     latest: bars.at(-1),
@@ -56,11 +70,16 @@ export function buildMinuteRequestUrl(
 
 export function MinuteTrendPanel({ code, period }: { code: string; period: MinuteBarPeriod }) {
   const [mode, setMode] = useState<"live" | "replay">("live");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshRevision, setRefreshRevision] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [response, setResponse] = useState<MinuteApiResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      const isAutoRequest = refreshRevision > 0;
+      if (isAutoRequest) setIsRefreshing(true);
       try {
         const result = await fetch(buildMinuteRequestUrl(code, period, mode), {
           cache: "no-store",
@@ -80,13 +99,29 @@ export function MinuteTrendPanel({ code, period }: { code: string; period: Minut
         if (!cancelled) {
           setResponse({ success: false, error: { code: "UPSTREAM_UNAVAILABLE" } });
         }
+      } finally {
+        if (!cancelled && isAutoRequest) setIsRefreshing(false);
       }
     }
     void load();
     return () => {
       cancelled = true;
     };
-  }, [code, mode, period]);
+  }, [code, mode, period, refreshRevision]);
+
+  const canAutoRefresh = shouldAutoRefreshMinute({
+    enabled: autoRefresh,
+    mode,
+    status: response?.meta?.status,
+  });
+
+  useEffect(() => {
+    if (!canAutoRefresh) return;
+    const intervalId = window.setInterval(() => {
+      setRefreshRevision((revision) => revision + 1);
+    }, AUTO_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(intervalId);
+  }, [canAutoRefresh]);
 
   const { latest, high, low, chartData } = useMemo(
     () => getMinuteTrendMetrics(response?.data ?? []),
@@ -103,7 +138,7 @@ export function MinuteTrendPanel({ code, period }: { code: string; period: Minut
           <h2 className="mt-1 text-lg font-semibold text-[#F4F7FB]">分钟走势</h2>
           <p className="mt-1 text-sm text-[#8B95A7]">用于趋势、量能和突破确认，不单独生成买入结论。</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             className={`h-8 rounded-md border px-3 text-xs font-semibold ${
               mode === "live"
@@ -126,6 +161,17 @@ export function MinuteTrendPanel({ code, period }: { code: string; period: Minut
           >
             Replay
           </button>
+          <label className="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-[#252A33] bg-[#090A0D] px-3 text-xs font-semibold text-[#8B95A7]">
+            <input
+              checked={autoRefresh}
+              className="accent-[#4F8CFF]"
+              onChange={(event) => setAutoRefresh(event.target.checked)}
+              type="checkbox"
+            />
+            <span>自动刷新</span>
+            <span className="font-mono text-[#586174]">30s</span>
+          </label>
+          {isRefreshing ? <span className="text-xs text-[#8B95A7]">刷新中...</span> : null}
         </div>
       </div>
 

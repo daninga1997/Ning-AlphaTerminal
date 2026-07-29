@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { DailyBar } from "@/types/market";
 import type { MinuteBar } from "@/types/market-data";
-import { buildMinuteRequestUrl, getMinuteTrendMetrics } from "./minute-trend-panel";
+import {
+  AUTO_REFRESH_INTERVAL_MS,
+  buildMinuteRequestUrl,
+  getMinuteTrendMetrics,
+  shouldAutoRefreshMinute,
+} from "./minute-trend-panel";
 import { makeStockPriceChartData } from "./stock-price-chart";
 import { chartPeriods } from "./stock-chart-period-panel";
 
@@ -86,5 +91,14 @@ describe("chart data derivation", () => {
     expect(buildMinuteRequestUrl("002472", "15m", "replay")).toBe(
       "/api/market/stocks/002472/minutes?period=15m&limit=120&mode=replay",
     );
+  });
+
+  it("enables 30-second refresh only for fresh or stale live minute data", () => {
+    expect(AUTO_REFRESH_INTERVAL_MS).toBe(30_000);
+    expect(shouldAutoRefreshMinute({ enabled: false, mode: "live", status: "fresh" })).toBe(false);
+    expect(shouldAutoRefreshMinute({ enabled: true, mode: "live", status: "fresh" })).toBe(true);
+    expect(shouldAutoRefreshMinute({ enabled: true, mode: "live", status: "stale" })).toBe(true);
+    expect(shouldAutoRefreshMinute({ enabled: true, mode: "live", status: "unavailable" })).toBe(false);
+    expect(shouldAutoRefreshMinute({ enabled: true, mode: "replay", status: "fresh" })).toBe(false);
   });
 });

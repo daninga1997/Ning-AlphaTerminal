@@ -44,10 +44,12 @@ function quoteStatus(health: ProviderHealth & Record<string, unknown>, quoteMeta
 }
 
 function sourceLabel(source: string | undefined, fallback: string): string {
-  if (source === "AKShare stock_zh_a_spot") return "AKShare / 新浪公开报价";
-  if (source === "AKShare stock_zh_a_spot_em") return "AKShare / 东方财富公开报价";
-  if (source?.startsWith("AKShare")) return source;
-  return source || fallback;
+  const resolvedSource = source || fallback;
+  if (resolvedSource === "tencent") return "腾讯财经";
+  if (resolvedSource === "AKShare stock_zh_a_spot") return "AKShare / 新浪公开报价";
+  if (resolvedSource === "AKShare stock_zh_a_spot_em") return "AKShare / 东方财富公开报价";
+  if (resolvedSource.startsWith("AKShare")) return resolvedSource;
+  return resolvedSource;
 }
 
 function sourceFromQuoteStrategy(strategy: string | null): string | null {
@@ -122,7 +124,7 @@ function capabilityWord(status: MarketDataStatus): string {
 }
 
 export function getCapabilityBadgeText(matrix: DataCapabilityMatrix): string {
-  return `AKShare · 报价${capabilityWord(matrix.quotes.currentStatus)} · 分钟线${capabilityWord(
+  return `${matrix.quotes.source} · 报价${capabilityWord(matrix.quotes.currentStatus)} · 分钟线${capabilityWord(
     matrix.minuteBars.currentStatus,
   )}`;
 }
@@ -132,5 +134,5 @@ export function getCapabilityWord(status: MarketDataStatus): string {
 }
 
 export function getSourceDisplayName(source?: string | null): string {
-  return sourceLabel(source ?? undefined, "AKShare");
+  return sourceLabel(source ?? undefined, "腾讯财经");
 }
