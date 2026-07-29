@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StockSearchCommand } from "@/components/search/stock-search-command";
 
 const mobileNavigation = ["工作台", "情绪", "板块", "观察池", "个股", "报告", "复盘", "设置"];
 const mobileLinks = ["/", "#", "#", "/watchlist", "/stocks/002896", "/reports", "/memory", "/settings"];
@@ -36,7 +37,7 @@ export function TopBar() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span>A股交易终端 v2.0</span>
+            <span>判官之眼 · JUDGEYE</span>
             {dataTimestamp && (
               <span className="font-mono text-cyan-200 border border-cyan-400/25 bg-cyan-400/5 rounded px-2 py-0.5">
                 数据日期: {dataTimestamp}
@@ -44,12 +45,13 @@ export function TopBar() {
             )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-white">今日工作台</h2>
+            <h2 className="text-lg font-semibold text-white">判官之眼</h2>
             <span className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-xs text-emerald-200">
               {dataLabel}
             </span>
           </div>
         </div>
+        <StockSearchCommand />
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-300 sm:flex sm:items-center">
           <div className="rounded-lg border border-emerald-400/15 bg-emerald-400/5 px-3 py-2">
             交易日状态：实时接入中

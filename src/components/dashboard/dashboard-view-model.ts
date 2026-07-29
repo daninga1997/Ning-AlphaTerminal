@@ -1,6 +1,6 @@
 import type { MarketDataMeta } from "@/types/market-data";
 import type { StockAnalysis } from "@/types/stock";
-import { getDemoOpportunities, getTopStocks } from "../../lib/stock-ranking";
+import { getOpportunities, getTopStocks } from "../../lib/stock-ranking";
 
 export type SectorPulse = {
   name: string;
@@ -47,7 +47,7 @@ export function getMarketOverview(stocks: StockAnalysis[]): MarketOverviewModel 
   const risingCount = stocks.filter((stock) => stock.changePercent > 0).length;
   const fallingCount = stocks.filter((stock) => stock.changePercent < 0).length;
   const turnover = stocks.reduce((sum, stock) => sum + stock.turnover, 0);
-  const opportunities = getDemoOpportunities(stocks);
+  const opportunities = getOpportunities(stocks);
 
   const sentiment =
     opportunities.aLevel.length > 0 && risingCount > fallingCount

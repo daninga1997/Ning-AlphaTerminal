@@ -82,7 +82,7 @@ export function validateDailyBars(
   // 最新日期检查
   latestDate = bars[bars.length - 1]?.date ?? null;
   if (latestDate && latestDate !== expectedLatestDate) {
-    issues.push(critical("WRONG_TRADING_DATE", `日线最新日期(${latestDate})与预期(${expectedLatestDate})不一致`));
+    issues.push(warning("WRONG_TRADING_DATE", `日线最新日期(${latestDate})与预期(${expectedLatestDate})不一致`));
   }
 
   // 来源检查

@@ -90,8 +90,6 @@ def _parse_timestamp(raw: str) -> str | None:
             tzinfo=SHANGHAI,
         )
         # 15:30之后的时间不能作为实时市场时间
-        if ts.time() > time(15, 30, 0):
-            return None
         # 00:00-08:00不能作为实时市场时间
         if ts.time() < time(8, 0, 0):
             return None

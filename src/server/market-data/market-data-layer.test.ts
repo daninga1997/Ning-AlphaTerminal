@@ -138,6 +138,21 @@ describe("freshness", () => {
 });
 
 describe("cache", () => {
+  it("preserves delayed status from daily bars instead of marking any nonempty response fresh", async () => {
+    const provider = new MockMarketDataProvider();
+    const originalGetDailyBars = provider.getDailyBars.bind(provider);
+    provider.getDailyBars = async (code, options) => {
+      const bars = await originalGetDailyBars(code, options);
+      return bars.map((bar) => ({ ...bar, status: "delayed" as const }));
+    };
+    const service = new MarketDataService({ provider });
+
+    const result = await service.getDailyBars("002472");
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.meta.status).toBe("delayed");
+  });
+
   it("相同请求在缓存期内只调用Provider一次", async () => {
     const cache = new MarketDataCache();
     const loader = vi.fn(async () => "value");

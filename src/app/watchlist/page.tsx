@@ -4,11 +4,13 @@ import { analyzeAllStocksFromMarketData } from "@/server/market-data/stock-analy
 import { IntegrityStatusBar } from "@/components/data-integrity/integrity-status-bar";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import { getMarketDataMode } from "@/server/market-data/provider-registry";
+import { getAllDynamicEntries } from "@/server/watchlist-storage/dynamic-watchlist-repository";
 
 export default async function WatchlistPage() {
   const stocks = await analyzeAllStocksFromMarketData();
   const mode = getMarketDataMode();
   const firstStock = stocks[0];
+  const dynamicEntries = await getAllDynamicEntries();
 
   const quote = firstStock ? {
     code: firstStock.code,
@@ -29,9 +31,9 @@ export default async function WatchlistPage() {
     askPrice: firstStock.currentPrice,
     marketTimestamp: firstStock.marketDataMeta?.marketTimestamp ?? firstStock.dataUpdatedAt ?? new Date().toISOString(),
     receivedAt: firstStock.marketDataMeta?.receivedAt ?? new Date().toISOString(),
-status: firstStock.marketDataMeta?.status ?? "delayed",
-source: firstStock.marketDataMeta?.source ?? "tencent",
-isDemo: false,
+    status: firstStock.marketDataMeta?.status ?? "delayed",
+    source: firstStock.marketDataMeta?.source ?? "tencent",
+    isDemo: false,
     strategyUsed: firstStock.marketDataMeta?.strategyUsed ?? null,
   } : null;
 
@@ -57,7 +59,7 @@ isDemo: false,
           quoteTimestamp={integrityReport.marketTimestamp}
           quoteSource={integrityReport.quoteSource}
         />
-        <WatchlistView stocks={stocks} />
+        <WatchlistView stocks={stocks} dynamicEntries={dynamicEntries} />
       </div>
     </AppShell>
   );

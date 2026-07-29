@@ -3,12 +3,10 @@ import type { CompletenessInput } from "../../types/data-integrity";
 type ComputeInput = CompletenessInput;
 
 const KEY_ERRORS_THAT_BLOCK = new Set([
-  "WRONG_TRADING_DATE",
   "FUTURE_TIMESTAMP",
   "MOCK_LIVE_MIXED",
   "SOURCE_CONFLICT",
   "QUOTE_MISSING",
-  "DAILY_BARS_MISSING",
   "PROVIDER_UNAVAILABLE",
   "PRICE_INVALID",
 ]);

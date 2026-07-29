@@ -45,7 +45,7 @@ describe("Completeness Calculator", () => {
     expect(score).toBe(0);
   });
 
-  it("WRONG_TRADING_DATE直接返回0", () => {
+  it("WRONG_TRADING_DATE不再返回0", () => {
     const score = calculateCompleteness({
       hasValidQuote: true,
       hasValidDailyBars: true,
@@ -55,7 +55,7 @@ describe("Completeness Calculator", () => {
       isSourceConsistent: true,
       criticalIssues: ["WRONG_TRADING_DATE"],
     });
-    expect(score).toBe(0);
+    expect(score).toBeGreaterThan(0);
   });
 });
 

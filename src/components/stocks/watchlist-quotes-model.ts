@@ -44,7 +44,7 @@ export function applyQuoteRefreshFailure(stocks: StockAnalysis[]): StockAnalysis
     return {
       ...stock,
       marketDataMeta: {
-        source: currentMeta?.source ?? "AKShare",
+        source: currentMeta?.source ?? "tencent",
         status: hasRealQuote ? "stale" : "unavailable",
         marketTimestamp: currentMeta?.marketTimestamp ?? null,
         receivedAt: currentMeta?.receivedAt ?? new Date().toISOString(),

@@ -2,6 +2,7 @@ export type MarketDataMode = "mock" | "replay" | "live";
 
 export type MarketDataStatus =
   | "fresh"
+  | "closed"
   | "delayed"
   | "stale"
   | "unavailable"
@@ -83,6 +84,7 @@ export interface MarketDailyBar {
   amount: number;
   /** percent */
   turnoverRate: number;
+  status?: MarketDataStatus;
   source: string;
   isDemo: boolean;
 }

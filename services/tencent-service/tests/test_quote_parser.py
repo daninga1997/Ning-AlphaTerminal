@@ -1,11 +1,16 @@
 """腾讯行情解析器完整测试"""
 import sys
+import asyncio
+import json
+from types import SimpleNamespace
+from unittest.mock import patch
 sys.path.insert(0, 'C:/Projects/AlphaTerminal/services/tencent-service')
 
 from app.quote_parser import (
     parse_tencent_text, QuoteRecord, validate_price_consistency,
     _safe_float, _safe_int, _parse_timestamp, get_status, is_trading_time,
 )
+from app.main import get_history
 
 # 腾讯真实数据样例（收盘后快照，成交量=手，成交额=万元）
 TENCENT_SAMPLE = (
@@ -47,12 +52,13 @@ def test_market_timestamp_parsed_correctly():
     assert "15:00:00" in q.upstream_market_time
 
 
-def test_invalid_timestamp_rejected():
-    """15:30之后的时间返回None"""
+def test_post_market_timestamp_is_retained_for_closed_quote():
+    """收盘后的上游更新时间仍可用于标记当日收盘报价。"""
     text = TENCENT_SAMPLE.replace("20260715150000", "20260715161436")
     result = parse_tencent_text(text, ["002896"])
     q = result[0]
-    assert q.upstream_market_time is None, "16:14:36应被拒绝"
+    assert q.upstream_market_time is not None
+    assert "16:14:36" in q.upstream_market_time
 
 
 def test_overnight_timestamp_rejected():
@@ -98,11 +104,34 @@ def test_invalid_text_returns_empty():
     assert result == []
 
 
+def test_history_uses_a_worker_thread_for_upstream_requests():
+    """历史K线请求不能阻塞 FastAPI 的事件循环。"""
+    payload = {
+        "data": {
+            "sz002317": {
+                "qfqday": [["2026-07-21", "26.5", "27.07", "27.15", "24.61", "786580"]]
+            }
+        }
+    }
+
+    async def fake_to_thread(*_args, **_kwargs):
+        return SimpleNamespace(text=f"kline_day={json.dumps(payload)}")
+
+    with patch("app.main.requests.get", side_effect=AssertionError("blocking request")), patch(
+        "app.main.asyncio.to_thread", side_effect=fake_to_thread
+    ) as worker:
+        result = asyncio.run(get_history("002317", "day", 1))
+
+    assert worker.called
+    assert result["count"] == 1
+
+
 print("Running all tests...")
 tests = [test_volume_hand_to_shares, test_amount_wan_to_yuan, test_price_consistency_check,
-         test_market_timestamp_parsed_correctly, test_invalid_timestamp_rejected,
+         test_market_timestamp_parsed_correctly, test_post_market_timestamp_is_retained_for_closed_quote,
          test_overnight_timestamp_rejected, test_status_live_during_trading,
-         test_missing_fields_return_none, test_invalid_text_returns_empty]
+         test_missing_fields_return_none, test_invalid_text_returns_empty,
+         test_history_uses_a_worker_thread_for_upstream_requests]
 passed = 0
 failed = 0
 for fn in tests:

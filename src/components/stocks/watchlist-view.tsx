@@ -9,9 +9,9 @@ import { StockFiltersPanel } from "./stock-filters";
 import { WatchlistQuoteRefresh } from "./watchlist-quote-refresh";
 import { applyQuoteRefreshFailure, mergeQuoteRefreshResult, type QuoteRefreshPayload } from "./watchlist-quotes-model";
 import { getLatestWatchlistUpdate, getWatchlistStatistics } from "./watchlist-view-model";
-import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
+import type { DynamicWatchlistEntry } from "@/server/watchlist-storage/dynamic-watchlist-repository";
 
-export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAnalysis[]; strategyItems?: StrategyWatchlistItem[] }) {
+export function WatchlistView({ stocks, dynamicEntries = [] }: { stocks: StockAnalysis[]; dynamicEntries?: DynamicWatchlistEntry[] }) {
   const [liveStocks, setLiveStocks] = useState(stocks);
   const [filters, setFilters] = useState<StockFilters>({
     query: "",
@@ -21,7 +21,7 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
   const [sortField, setSortField] = useState<StockSortField>("totalScore");
   const sectors = useMemo(() => getUniqueSectors(liveStocks), [liveStocks]);
   const watchlistCodes = useMemo(() => liveStocks.map((stock) => stock.code), [liveStocks]);
-  const strategyByCode = useMemo(() => new Map(strategyItems.map((item) => [item.code, item])), [strategyItems]);
+  const dynamicByCode = useMemo(() => new Map(dynamicEntries.map((e) => [e.code, e])), [dynamicEntries]);
   const visibleStocks = useMemo(
     () => sortStocks(filterStocks(liveStocks, filters), sortField),
     [filters, sortField, liveStocks],
@@ -65,11 +65,11 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
           </div>
 
           <label className="block">
-            <span className="sr-only">搜索股票名称或代码</span>
+            <span className="sr-only">筛选当前 20 只观察池</span>
             <input
               className="h-11 w-full rounded-md border border-[#252A33] bg-[#090A0D] px-4 text-sm text-[#F4F7FB] outline-none transition placeholder:text-[#586174] focus:border-[#7AA7FF]"
               onChange={(event) => handleQueryChange(event.target.value)}
-              placeholder="搜索股票名称或代码，例如 002472"
+              placeholder="筛选当前 20 只观察池，例如 002472"
               value={filters.query}
             />
           </label>
@@ -88,7 +88,7 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
       {visibleStocks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {visibleStocks.map((stock) => (
-            <StockCard key={stock.code} stock={stock} strategyItem={strategyByCode.get(stock.code)} />
+            <StockCard key={stock.code} stock={stock} />
           ))}
         </div>
       ) : (

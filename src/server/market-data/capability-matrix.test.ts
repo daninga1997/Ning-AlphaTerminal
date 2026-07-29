@@ -61,4 +61,31 @@ describe("market data capability matrix", () => {
     expect(matrix.sectors.currentStatus).toBe("unavailable");
     expect(matrix.marketOverview.supported).toBe(false);
   });
+
+  it("uses the Tencent display name when quote health comes from Tencent", () => {
+    const matrix = buildCapabilityMatrix({
+      mode: "live",
+      providerName: "tencent",
+      health: {
+        ok: true,
+        source: "tencent",
+        mode: "live",
+        capabilities: {
+          supportsQuotes: true,
+          supportsDailyBars: true,
+          supportsMinuteBars: false,
+          supportsSectors: false,
+          supportsMarketOverview: false,
+          minimumRefreshIntervalMs: 3_000,
+          supportedMinutePeriods: [],
+          isLicensedSource: false,
+        },
+        quoteLastSuccessAt: "2026-07-22T16:14:45+08:00",
+      },
+    });
+
+    expect(matrix.quotes.source).toBe("腾讯财经");
+    expect(matrix.quotes.currentStatus).toBe("delayed");
+    expect(getCapabilityBadgeText(matrix)).toBe("腾讯财经 · 报价可用 · 分钟线不可用");
+  });
 });

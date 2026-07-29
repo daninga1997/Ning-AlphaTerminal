@@ -58,4 +58,25 @@ describe("stock detail market data loading", () => {
     expect(detail?.stock.signal).not.toBe("buy");
     expect(detail?.stock.shortTermScore.warnings).toContain("仅报价可用，技术确认不足。");
   });
+
+  it("blocks new buy when daily technical data is delayed", async () => {
+    const provider = new CountingProvider();
+    provider.getQuote = async () => ({
+      ...(await new MockMarketDataProvider().getQuote("002472")),
+      status: "closed",
+      source: "tencent",
+      isDemo: false,
+    });
+    provider.getDailyBars = async (code, options) => {
+      const bars = await new MockMarketDataProvider().getDailyBars(code, options);
+      return bars.map((bar) => ({ ...bar, status: "delayed" as const }));
+    };
+    const service = new MarketDataService({ provider, cacheTtlMs: 0 });
+
+    const detail = await getStockDetailFromMarketData("002472", service);
+
+    expect(detail?.stock.technicalDataMeta.status).toBe("delayed");
+    expect(detail?.stock.dataCapabilityWarning).toBe("仅报价可用，技术确认不足。");
+    expect(detail?.stock.signal).not.toBe("buy");
+  });
 });

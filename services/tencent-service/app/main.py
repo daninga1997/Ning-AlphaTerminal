@@ -12,10 +12,13 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import requests
+import urllib3
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .quote_parser import parse_tencent_text, validate_price_consistency, is_trading_time
+from .search_parser import parse_szse_mainboard_hints
+
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 app = FastAPI(title="Alpha Terminal — Tencent Market Data", version="1.0.0")
@@ -27,12 +30,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/search")
+async def search_stocks(query: str = Query(..., min_length=1, max_length=30)):
+    """Search Tencent candidates and retain Shenzhen main-board securities only."""
+    keyword = query.strip()
+    if not keyword:
+        return {"success": False, "error": {"code": "EMPTY_QUERY", "message": "搜索关键词不能为空"}}
+
+    try:
+        response = await asyncio.to_thread(
+            requests.get,
+            "https://smartbox.gtimg.cn/s3/",
+            params={"q": keyword, "t": "all"},
+            timeout=8,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return {
+            "success": False,
+            "error": {"code": "UPSTREAM_UNAVAILABLE", "message": "股票搜索服务暂不可用"},
+        }
+
+    return {
+        "success": True,
+        "data": parse_szse_mainboard_hints(response.text),
+        "meta": {
+            "source": "tencent_smartbox",
+            "market": "SZSE",
+            "scope": "mainboard",
+            "received_at": datetime.now(SHANGHAI).isoformat(),
+        },
+    }
+
 # 服务状态
 _last_success_at: str | None = None
 _last_failure_at: str | None = None
 _last_error_message: str | None = None
 _sample_market_time: str | None = None
 _last_data_status: str = "unknown"
+_last_daily_success_at: str | None = None
+_last_daily_failure_at: str | None = None
 
 
 @app.get("/health")
@@ -69,6 +107,8 @@ async def health():
         "latency_ms": latency_ms,
         "last_success_at": _last_success_at,
         "last_failure_at": _last_failure_at,
+        "daily_bars_last_success_at": _last_daily_success_at,
+        "daily_bars_last_failure_at": _last_daily_failure_at,
         "last_error": _last_error_message,
         "server_time": now_iso,
     }
@@ -170,3 +210,69 @@ def _compute_status(upstream_time: str | None, is_trading: bool) -> str:
         return "closed"
     except (ValueError, TypeError):
         return "unavailable"
+
+@app.get("/history")
+async def get_history(symbol: str, period: str = "day", count: int = 120):
+    """
+    腾讯历史K线数据（复用腾讯财经公开接口）
+    """
+    global _last_daily_success_at, _last_daily_failure_at
+
+    import re
+    import json
+    from datetime import datetime
+    import requests
+
+    normalized_symbol = symbol.strip().lower()
+    market_symbol = normalized_symbol if normalized_symbol.startswith(("sz", "sh")) else f"sz{normalized_symbol}"
+    adjustment = "qfq" if period in {"day", "week", "month"} else ""
+    response_key = f"{adjustment}{period}" if adjustment else period
+    url = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+    params = {
+        "param": f"{market_symbol},{period},,,{count}" + (f",{adjustment}" if adjustment else ""),
+        "_var": "kline_day"
+    }
+
+    try:
+        resp = await asyncio.to_thread(requests.get, url, params=params, timeout=10)
+        data = resp.text
+
+        match = re.search(r'kline_day=(\{.*\})', data)
+        if not match:
+            return {"error": "parse failed"}
+
+        raw_json = json.loads(match.group(1))
+        stock_data = raw_json.get("data", {})
+        if not isinstance(stock_data, dict):
+            return {"error": "unexpected data format"}
+
+        klines = stock_data.get(market_symbol, {}).get(response_key, [])
+        if not klines:
+            return {"error": "no data returned"}
+
+        result = []
+        for item in klines[:count]:
+            if not isinstance(item, list) or len(item) < 6:
+                continue
+            result.append({
+                "time": item[0],
+                "open": float(item[1]),
+                "close": float(item[2]),
+                "high": float(item[3]),
+                "low": float(item[4]),
+                "volume": float(item[5])
+            })
+
+        _last_daily_success_at = datetime.now(SHANGHAI).isoformat()
+        _last_daily_failure_at = None
+        return {
+            "symbol": symbol,
+            "period": period,
+            "count": len(result),
+            "data": result,
+            "source": "tencent",
+            "updated_at": datetime.now().isoformat()
+        }
+    except Exception:
+        _last_daily_failure_at = datetime.now(SHANGHAI).isoformat()
+        return {"error": "upstream error"}

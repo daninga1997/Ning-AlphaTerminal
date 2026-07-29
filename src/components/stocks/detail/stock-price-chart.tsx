@@ -53,7 +53,7 @@ export function StockPriceChart({ bars, meta }: { bars: DailyBar[]; meta?: Marke
           <h2 className="mt-1 text-lg font-semibold text-[#F4F7FB]">价格走势</h2>
         </div>
         <span className="w-fit rounded-full border border-[#4F8CFF]/25 bg-[#4F8CFF]/10 px-3 py-1 text-xs font-semibold text-[#7AA7FF]">
-          120日模拟数据
+          {meta?.isDemo ?? true ? "120日模拟数据" : `${bars.length}日真实日线`}
         </span>
       </div>
 
@@ -61,6 +61,11 @@ export function StockPriceChart({ bars, meta }: { bars: DailyBar[]; meta?: Marke
         {meta?.isDemo ?? true ? "当前图表为 Replay/Mock 演示历史快照，不是真实分钟行情。" : "当前图表使用真实日线数据。"} ·{" "}
         {meta?.source ?? "Mock"}
       </p>
+      {!(meta?.isDemo ?? true) && (
+        <p className="mt-1 text-xs text-[#586174]">
+          📊 数据来源：腾讯财经 | 分钟级数据暂不可用，以日线趋势为准
+        </p>
+      )}
 
       <div className="mt-5 h-[300px] min-w-0 sm:h-[360px]">
         <ResponsiveContainer height="100%" width="100%">
