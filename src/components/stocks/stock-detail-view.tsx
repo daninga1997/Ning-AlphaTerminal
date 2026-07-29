@@ -2,10 +2,9 @@ import type { DailyBar } from "@/types/market";
 import type { StockAnalysis } from "@/types/stock";
 import type { DataIntegrityReport } from "@/types/data-integrity";
 import { ScoreBreakdownPanel } from "./detail/score-breakdown-panel";
-import { MinuteTrendPanel } from "./detail/minute-trend-panel";
 import { RiskPanel } from "./detail/risk-panel";
 import { StockDecisionHeader } from "./detail/stock-decision-header";
-import { StockPriceChart } from "./detail/stock-price-chart";
+import { StockChartPeriodPanel } from "./detail/stock-chart-period-panel";
 import { TechnicalSnapshot } from "./detail/technical-snapshot";
 import { TradingPlanCard } from "./detail/trading-plan-card";
 import { SaveTradingPlanButton } from "./detail/save-trading-plan-button";
@@ -34,8 +33,7 @@ export function StockDetailView({ stock, bars, integrityReport, strategyOutput }
         />
       </div>
       <TechnicalSnapshot indicators={stock.indicators} />
-      <StockPriceChart bars={bars} meta={stock.technicalDataMeta} />
-      <MinuteTrendPanel code={stock.code} />
+      <StockChartPeriodPanel bars={bars} code={stock.code} meta={stock.technicalDataMeta} />
       <RiskPanel stock={stock} />
     </div>
   );

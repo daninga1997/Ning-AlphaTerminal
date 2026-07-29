@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { DailyBar } from "@/types/market";
 import type { MinuteBar } from "@/types/market-data";
-import { getMinuteTrendMetrics } from "./minute-trend-panel";
+import { buildMinuteRequestUrl, getMinuteTrendMetrics } from "./minute-trend-panel";
 import { makeStockPriceChartData } from "./stock-price-chart";
+import { chartPeriods } from "./stock-chart-period-panel";
 
 function dailyBar(index: number): DailyBar {
   return {
@@ -67,5 +68,23 @@ describe("chart data derivation", () => {
         { time: "09:32", close: 12, volume: 1002 },
       ],
     });
+  });
+
+  it("supports one daily period and five minute periods", () => {
+    expect(chartPeriods).toEqual(["day", "1m", "5m", "15m", "30m", "60m"]);
+  });
+
+  it("builds a live request for each supported minute period", () => {
+    for (const period of ["1m", "5m", "15m", "30m", "60m"] as const) {
+      expect(buildMinuteRequestUrl("002472", period, "live")).toBe(
+        `/api/market/stocks/002472/minutes?period=${period}&limit=120`,
+      );
+    }
+  });
+
+  it("adds replay mode only when explicitly selected", () => {
+    expect(buildMinuteRequestUrl("002472", "15m", "replay")).toBe(
+      "/api/market/stocks/002472/minutes?period=15m&limit=120&mode=replay",
+    );
   });
 });

@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { MinuteBar } from "@/types/market-data";
+import type { MinuteBar, MinuteBarPeriod } from "@/types/market-data";
 
 type MinuteApiResponse = {
   success: boolean;
   data?: MinuteBar[];
+  error?: {
+    code: string;
+    message?: string;
+  };
   meta?: {
     source: string;
     status: string;
@@ -40,20 +44,43 @@ export function getMinuteTrendMetrics(bars: MinuteBar[]): MinuteTrendMetrics {
   };
 }
 
-export function MinuteTrendPanel({ code }: { code: string }) {
-  const [period, setPeriod] = useState<"1m" | "5m">("1m");
+export function buildMinuteRequestUrl(
+  code: string,
+  period: MinuteBarPeriod,
+  mode: "live" | "replay",
+): string {
+  const params = new URLSearchParams({ period, limit: "120" });
+  if (mode === "replay") params.set("mode", "replay");
+  return `/api/market/stocks/${code}/minutes?${params.toString()}`;
+}
+
+export function MinuteTrendPanel({ code, period }: { code: string; period: MinuteBarPeriod }) {
   const [mode, setMode] = useState<"live" | "replay">("live");
   const [response, setResponse] = useState<MinuteApiResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const replayParam = mode === "replay" ? "&mode=replay" : "";
-      const result = await fetch(`/api/market/stocks/${code}/minutes?period=${period}&limit=120${replayParam}`, {
-        cache: "no-store",
-      });
-      const json = (await result.json()) as MinuteApiResponse;
-      if (!cancelled) setResponse(json);
+      try {
+        const result = await fetch(buildMinuteRequestUrl(code, period, mode), {
+          cache: "no-store",
+        });
+        const json = (await result.json()) as MinuteApiResponse;
+        if (!cancelled) {
+          setResponse(
+            result.ok
+              ? json
+              : {
+                  success: false,
+                  error: json.error ?? { code: "UPSTREAM_UNAVAILABLE" },
+                },
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setResponse({ success: false, error: { code: "UPSTREAM_UNAVAILABLE" } });
+        }
+      }
     }
     void load();
     return () => {
@@ -99,20 +126,6 @@ export function MinuteTrendPanel({ code }: { code: string }) {
           >
             Replay
           </button>
-          {(["1m", "5m"] as const).map((item) => (
-            <button
-              className={`h-8 rounded-md border px-3 text-xs font-semibold ${
-                period === item
-                  ? "border-[#4F8CFF]/40 bg-[#1D2633] text-[#F4F7FB]"
-                  : "border-[#252A33] bg-[#090A0D] text-[#8B95A7]"
-              }`}
-              key={item}
-              onClick={() => setPeriod(item)}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
         </div>
       </div>
 
