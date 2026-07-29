@@ -14,3 +14,47 @@ export type BacktestSignalInput = {
   index: number;
   breakoutLookback: number;
 };
+
+export type BacktestTrade = {
+  code: string;
+  signalDate: string;
+  entryDate: string;
+  entryPrice: number;
+  entryCommission: number;
+  quantity: number;
+  exitDate: string;
+  exitPrice: number;
+  exitCommission: number;
+  sellSideCharge: number;
+  exitReason: string;
+  holdingDays: number;
+  profitLoss: number;
+  returnPercent: number;
+};
+
+export type BacktestEquityPoint = {
+  date: string;
+  equity: number;
+  cash: number;
+  marketValue: number;
+};
+
+export type RunBacktestInput = {
+  bars: MarketDailyBar[];
+  strategy: BacktestStrategyId;
+  initialCapital: number;
+  breakoutLookback: number;
+};
+
+export type BacktestReport = {
+  initialCapital: number;
+  finalEquity: number;
+  totalReturnPercent: number;
+  annualizedReturnPercent: number;
+  maxDrawdownPercent: number;
+  winRatePercent: number | null;
+  profitLossRatio: number | null;
+  completedTradeCount: number;
+  equityCurve: BacktestEquityPoint[];
+  trades: BacktestTrade[];
+};
