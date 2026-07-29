@@ -16,6 +16,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .quote_parser import parse_tencent_text, validate_price_consistency, is_trading_time
+from .kline_provider import KlineProviderError, fetch_minute_klines
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 app = FastAPI(title="Alpha Terminal — Tencent Market Data", version="1.0.0")
@@ -33,6 +34,8 @@ _last_failure_at: str | None = None
 _last_error_message: str | None = None
 _sample_market_time: str | None = None
 _last_data_status: str = "unknown"
+_last_minute_success_at: str | None = None
+_last_minute_failure_at: str | None = None
 
 
 @app.get("/health")
@@ -69,6 +72,8 @@ async def health():
         "latency_ms": latency_ms,
         "last_success_at": _last_success_at,
         "last_failure_at": _last_failure_at,
+        "minute_bars_last_success_at": _last_minute_success_at,
+        "minute_bars_last_failure_at": _last_minute_failure_at,
         "last_error": _last_error_message,
         "server_time": now_iso,
     }
@@ -170,3 +175,50 @@ def _compute_status(upstream_time: str | None, is_trading: bool) -> str:
         return "closed"
     except (ValueError, TypeError):
         return "unavailable"
+
+
+def _compute_minute_status(timestamp: str) -> str:
+    try:
+        latest = datetime.fromisoformat(timestamp)
+        now = datetime.now(SHANGHAI)
+        if latest.date() < now.date():
+            return "stale"
+        if is_trading_time():
+            return "fresh" if (now - latest).total_seconds() <= 180 else "delayed"
+        return "closed"
+    except (ValueError, TypeError):
+        return "unavailable"
+
+
+@app.get("/api/kline/minute")
+async def get_minute_kline(
+    symbol: str = Query(..., min_length=6, max_length=6),
+    period: str = Query("1m"),
+    limit: int = Query(120, ge=1, le=500),
+):
+    global _last_minute_success_at, _last_minute_failure_at
+
+    code = symbol.strip()
+    try:
+        bars = await asyncio.to_thread(fetch_minute_klines, code, period, limit)
+    except ValueError:
+        _last_minute_failure_at = datetime.now(SHANGHAI).isoformat()
+        return {"success": False, "error": {"code": "INVALID_PARAMS", "message": "分钟K线参数无效"}}
+    except KlineProviderError:
+        _last_minute_failure_at = datetime.now(SHANGHAI).isoformat()
+        return {"success": False, "error": {"code": "UPSTREAM_UNAVAILABLE", "message": "分钟K线数据暂不可用"}}
+
+    latest = bars[-1]
+    received_at = datetime.now(SHANGHAI).isoformat()
+    _last_minute_success_at = received_at
+    _last_minute_failure_at = None
+    return {
+        "success": True,
+        "symbol": code,
+        "period": period,
+        "data": bars,
+        "source": "tencent",
+        "status": _compute_minute_status(latest["time"]),
+        "market_timestamp": latest["time"],
+        "received_at": received_at,
+    }
