@@ -17,7 +17,7 @@ PERIOD_KEYS = {
     "30m": "m30",
     "60m": "m60",
 }
-KLINE_URL = "https://web.ifzq.gtimg.cn/appstock/app/kline/get"
+KLINE_URL = "https://ifzq.gtimg.cn/appstock/app/kline/mkline"
 
 
 class MinuteKline(TypedDict):
@@ -47,7 +47,7 @@ def build_minute_url(code: str, period: str, limit: int) -> str:
         raise ValueError("INVALID_PERIOD")
     if not 1 <= limit <= 500:
         raise ValueError("INVALID_LIMIT")
-    query = urlencode({"param": f"{symbol},{period},,,{limit}", "_var": "kline_minute"})
+    query = urlencode({"param": f"{symbol},{PERIOD_KEYS[period]},,,{limit}", "_var": "kline_minute"})
     return f"{KLINE_URL}?{query}"
 
 
@@ -117,7 +117,11 @@ def _parse_timestamp(value: object) -> str | None:
     if not isinstance(value, str):
         return None
     try:
-        parsed = datetime.fromisoformat(value.replace("/", "-"))
+        parsed = (
+            datetime.strptime(value, "%Y%m%d%H%M")
+            if value.isdigit() and len(value) == 12
+            else datetime.fromisoformat(value.replace("/", "-"))
+        )
     except ValueError:
         return None
     if parsed.tzinfo is None:

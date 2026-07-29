@@ -1,4 +1,5 @@
 import pytest
+from urllib.parse import parse_qs, urlparse
 
 from app.kline_provider import (
     KlineProviderError,
@@ -14,6 +15,14 @@ def test_accepts_only_shenzhen_prefixes():
 
     with pytest.raises(ValueError, match="INVALID_SYMBOL"):
         validate_sz_symbol("600519")
+
+
+def test_builds_tencent_minute_endpoint_with_mapped_period_key():
+    url = build_minute_url("002472", "5m", 120)
+
+    assert urlparse(url).netloc == "ifzq.gtimg.cn"
+    assert urlparse(url).path == "/appstock/app/kline/mkline"
+    assert parse_qs(urlparse(url).query)["param"] == ["sz002472,m5,,,120"]
 
 
 def test_parses_and_filters_tencent_minute_payload():
@@ -33,6 +42,15 @@ def test_parses_and_filters_tencent_minute_payload():
             "volume": 1200.0,
         },
     ]
+
+
+def test_parses_compact_tencent_minute_timestamp():
+    payload = (
+        'kline_minute={"data":{"sz002472":{"m1":['
+        '["202607270930","35.38","35.40","35.42","35.36","720.00"]]}}}'
+    )
+
+    assert parse_minute_payload(payload, "sz002472", "1m", 120)[0]["time"] == "2026-07-27T09:30:00+08:00"
 
 
 def test_rejects_unsupported_period_and_limit():
