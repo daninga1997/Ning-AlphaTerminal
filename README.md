@@ -236,6 +236,16 @@ npm run prisma:seed
 
 注意：当前在包含中文路径的 Windows 工作区里，Prisma 6 的 `migrate dev` schema-engine 可能无法直接写入 SQLite。本项目已保留迁移 SQL，并使用 Prisma Client 应用本地迁移与 seed。应用运行和 Prisma Client 查询正常。
 
+## 策略回测 `/backtest`
+
+- 访问 `/backtest` 可运行三种策略的历史回测：**突破买入**、**均线交叉**、**趋势跟踪**。
+- 回测数据使用腾讯财经历史日线（每个请求最多 500 根 K 线），信号由确定性策略引擎生成。
+- 交易执行模拟：信号次日开盘价入场、0.05% 滑点、0.03% 手续费（最低 5 元）、卖出 0.05% 费用、100 股整数倍。
+- 回测报告仅存于内存（不写入数据库），包含权益曲线、完成交易明细、年化收益、最大回撤等指标。
+- `/api/backtest/history?code=002472&days=250` 提供只读 GET 日的线端点，仅在使用有效的深圳主板代码和不超过 500 个交易日的情况下返回数据。
+- 固定成本假设和目标价位在摘要区域中展示，不宣称盈利保证。
+- 本地腾讯行情服务（`:8001` 端口）必须正在运行，否则日线请求将失败并显示错误提示。
+
 ## 测试和检查
 
 ```bash
@@ -288,6 +298,26 @@ npx tsc --noEmit
 ## 提醒
 
 本项目仅用于个人交易观察工具的界面和规则演示。当前没有真实行情，也不构成投资建议。
+
+## Paper Trading
+
+The stock detail page supports research-only paper trades saved in local SQLite.
+
+- Entry uses the server-side quote and does not send an order or contact a broker.
+- The first strategy target and stop-loss settle the record at their configured prices.
+- If neither condition occurs, the close of the fifth completed daily bar after entry settles the record.
+- Only one open paper trade is allowed per stock; records persist after refresh and restart.
+- Paper trades do not modify minute K-line retrieval, period controls, or auto-refresh.
+
+API: `POST /api/paper-trades` and `GET /api/paper-trades?code=002472`.
+
+The paper trade ledger is available at `/paper-trades`. It supports status filters, entry/exit/return sorting, and realized-result statistics. An open record can be manually closed only after a confirmation step; the server records its own live quote as the exit price. The client never submits an exit price.
+
+On `/paper-trades`, open records refresh their displayed server quote and floating return every 30 seconds while the page is visible. Hidden pages do not poll. A list-row manual-close confirmation shows the latest displayed quote, while final settlement always re-reads the quote on the server and updates only that row plus the realized statistics.
+
+## Stock Detail Feedback
+
+`/stocks/[code]` provides a route loading skeleton while the detail data is rendered. Minute-period changes show a chart-area loading state; unavailable minute data stays inside the chart panel, and an empty successful response shows a no-data state instead of an empty chart. Simulated-trade reads keep their feedback inside the paper-trade panel. These states do not change minute-bar sources, Replay mode, or the existing auto-refresh rules.
 
 ## Market Data Layer V1
 
