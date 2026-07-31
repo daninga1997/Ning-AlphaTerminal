@@ -10,7 +10,7 @@ export function calculateSuggestedPosition(input: {
   dataPermission: TradeDecisionPermission;
   marketPositionCap: number;
 }): number {
-  if (input.dataPermission !== "full") return 0;
+  if (input.dataPermission !== "full" && input.dataPermission !== "demo") return 0;
   if (input.riskRewardRatio < riskConfig.minRiskRewardForBuy) return 0;
   const base = input.grade === "S" ? 18 : input.grade === "A" ? 12 : input.grade === "B" ? 6 : 0;
   const riskAdjusted = input.stopDistancePercent > riskConfig.highStopDistancePercent ? Math.round(base * 0.5) : base;

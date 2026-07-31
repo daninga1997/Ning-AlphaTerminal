@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MarketDailyBar, MinuteBar, StockQuote } from "@/types/market-data";
 import type { DataIntegrityReport } from "@/types/data-integrity";
 import { runAllStrategies } from "./strategy-engine";
-import { generateAlphaTradePlan } from "./trade-plan-generator";
+import { detectStrategyConflicts, generateAlphaTradePlan } from "./trade-plan-generator";
 import { calculateWatchZone } from "./trade-levels/watch-zone-model";
 import { buildEntryPlans } from "./trade-levels/entry-price-model";
 import { calculateStopLoss } from "./trade-levels/stop-loss-model";
@@ -208,5 +208,30 @@ describe("Alpha strategy engine V1", () => {
     expect(plan.cancellationConditions.length).toBeGreaterThan(0);
     expect(plan.exitRules.length).toBeGreaterThan(0);
     expect(plan.watchZone.low).toBeLessThan(plan.chaseLimit.price);
+  });
+
+  it("demo mode runs the full pipeline and marks plans as demo", () => {
+    const strategyInput = input({ integrityReport: integrity("demo", "demo_only") });
+    const result = runAllStrategies(strategyInput);
+    expect(result.finalPlan.isDemoPlan).toBe(true);
+    expect(result.finalPlan.currentAction).not.toBe("data_blocked");
+    expect(result.strategyResults.every((item) => item.permission === "demo")).toBe(true);
+  });
+
+  it("each entry plan carries its own risk reward ratio", () => {
+    const strategyInput = input();
+    const result = runAllStrategies(strategyInput, { strategy: "trend_swing" });
+    const ratios = result.finalPlan.entryPlans.map((entry) => entry.riskRewardRatio ?? 0);
+    expect(result.finalPlan.entryPlans.length).toBeGreaterThan(1);
+    expect(new Set(ratios).size).toBeGreaterThan(1);
+  });
+
+  it("does not treat an inapplicable avoid as a buy/avoid conflict", () => {
+    const results = runAllStrategies(input()).strategyResults;
+    const buyLike = { ...results[0], action: "buy_allowed" as const, invalidReasons: [] };
+    const inapplicable = { ...results[1], action: "avoid" as const, invalidReasons: ["未形成合法首阴修复结构"] };
+    const active = { ...results[1], action: "avoid" as const, invalidReasons: ["最大回撤过大"] };
+    expect(detectStrategyConflicts([buyLike, inapplicable])).toEqual([]);
+    expect(detectStrategyConflicts([buyLike, active])).toHaveLength(1);
   });
 });

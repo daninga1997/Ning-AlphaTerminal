@@ -302,3 +302,35 @@ export const mockStocks: MockStock[] = [
     updatedAt: "2026-07-14 09:30",
   },
 ];
+
+const demoTrendStages = ["accumulation", "markup", "breakout", "distribution", "decline"] as const;
+const demoSymbols = ["buy", "wait", "hold", "reduce", "avoid"] as const;
+const demoRiskLevels = ["low", "medium", "high"] as const;
+
+function demoSeed(code: string): number {
+  return code.split("").reduce((sum, char) => sum + Number(char), 0);
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+// 观察池之外的任意 6 位代码：生成确定性的演示股票画像，保证同代码每次结果一致
+export function getMockStockForCode(code: string): MockStock {
+  const seed = demoSeed(code);
+  return {
+    code,
+    name: `模拟${code}`,
+    sector: "演示板块",
+    sectorScore: 55 + (seed % 36),
+    currentPrice: round2(5 + (seed % 96) * 0.5),
+    changePercent: round2((seed % 80) / 10 - 3),
+    turnover: round2(3 + (seed % 40)),
+    volumeRatio: round2(0.6 + (seed % 20) * 0.1),
+    turnoverRate: round2(1.5 + (seed % 14)),
+    trendStage: demoTrendStages[seed % demoTrendStages.length],
+    signal: demoSymbols[seed % demoSymbols.length],
+    riskLevel: demoRiskLevels[seed % demoRiskLevels.length],
+    updatedAt: "2026-07-14 09:30",
+  };
+}

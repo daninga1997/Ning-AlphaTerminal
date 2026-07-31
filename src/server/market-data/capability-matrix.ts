@@ -46,23 +46,14 @@ function quoteStatus(health: ProviderHealth & Record<string, unknown>, quoteMeta
 function sourceLabel(source: string | undefined, fallback: string): string {
   const resolvedSource = source || fallback;
   if (resolvedSource === "tencent") return "腾讯财经";
-  if (resolvedSource === "AKShare stock_zh_a_spot") return "AKShare / 新浪公开报价";
-  if (resolvedSource === "AKShare stock_zh_a_spot_em") return "AKShare / 东方财富公开报价";
-  if (resolvedSource.startsWith("AKShare")) return resolvedSource;
   return resolvedSource;
-}
-
-function sourceFromQuoteStrategy(strategy: string | null): string | null {
-  if (strategy === "sina_spot") return "AKShare / 新浪公开报价";
-  if (strategy === "eastmoney_spot") return "AKShare / 东方财富公开报价";
-  return null;
 }
 
 export function buildCapabilityMatrix(input: MatrixInput): DataCapabilityMatrix {
   const { health } = input;
   const disclaimer = health.disclaimer ?? defaultDisclaimer;
   const quoteStrategy = input.quoteMeta?.strategyUsed ?? health.quoteStrategyUsed ?? null;
-  const quoteSource = sourceLabel(input.quoteMeta?.source, sourceFromQuoteStrategy(quoteStrategy) ?? input.providerName);
+  const quoteSource = sourceLabel(input.quoteMeta?.source, input.providerName);
 
   return {
     quotes: {

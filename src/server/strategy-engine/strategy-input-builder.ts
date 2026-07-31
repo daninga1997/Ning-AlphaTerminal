@@ -1,4 +1,4 @@
-import { mockStocks } from "@/data/mock-stocks";
+import { getMockStockForCode, mockStocks } from "@/data/mock-stocks";
 import type { DataIntegrityReport } from "@/types/data-integrity";
 import type { MarketDailyBar, MarketOverview, MinuteBar, SectorSnapshot, StockQuote } from "@/types/market-data";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
@@ -12,10 +12,9 @@ import type {
   StoredStockQuoteSnapshot,
 } from "@/server/market-storage/market-data-repository";
 import { PrismaMarketDataRepository } from "@/server/market-storage/prisma-market-data-repository";
-import { coreSectorMappings, watchlistCodes } from "@/server/market-sync/sector-mapping";
+import { coreSectorMappings } from "@/server/market-sync/sector-mapping";
 import { getExpectedIntradayTradingDate, getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
 import type { StrategyInput, StrategySectorSnapshot } from "./types/strategy";
-import { StrategyEngineError } from "./strategy-errors";
 import { selectCompletedDailyBars } from "./completed-daily-bars";
 import { selectTradingDayMinuteBars } from "./current-minute-bars";
 
@@ -29,12 +28,8 @@ export interface StrategyInputBuilderOptions {
 }
 
 export async function buildStrategyInputForCode(code: string, options: StrategyInputBuilderOptions = {}): Promise<StrategyInput> {
-  if (!watchlistCodes.includes(code)) {
-    throw new StrategyEngineError("STOCK_NOT_IN_WATCHLIST", "股票不在20只核心观察池中", 404);
-  }
-
-  const stock = mockStocks.find((item) => item.code === code);
-  if (!stock) throw new StrategyEngineError("STOCK_NOT_FOUND", "股票不存在", 404);
+  const stock = mockStocks.find((item) => item.code === code) ?? getMockStockForCode(code);
+  const isSyntheticStock = !mockStocks.some((item) => item.code === code);
 
   const mode = getMarketDataMode();
   const service = options.service ?? new MarketDataService();
@@ -49,7 +44,8 @@ export async function buildStrategyInputForCode(code: string, options: StrategyI
     options.skipProviderHistorical ?? false,
     getExpectedIntradayTradingDate(new Date()),
   );
-  const sectors = "sectorsOverride" in options ? options.sectorsOverride ?? [] : await loadSectors(service, repository);
+  const loadedSectors = "sectorsOverride" in options ? options.sectorsOverride ?? [] : await loadSectors(service, repository);
+  const sectors = isSyntheticStock ? [syntheticSectorSnapshot(stock), ...loadedSectors] : loadedSectors;
   const marketOverview = "marketOverviewOverride" in options ? options.marketOverviewOverride ?? null : await loadMarketOverview(service, repository);
   const integrityReport = buildIntegrityReport({
     code,
@@ -81,6 +77,21 @@ export async function buildStrategyInputForCode(code: string, options: StrategyI
     previousTradePlans: [],
     strategyVersion: "alpha-strategy-engine-v1",
     calculatedAt: integrityReport.validatedAt,
+  };
+}
+
+function syntheticSectorSnapshot(stock: ReturnType<typeof getMockStockForCode>): SectorSnapshot {
+  return {
+    id: "demo",
+    name: stock.sector,
+    changePercent: stock.changePercent,
+    leadingStocks: [stock.name],
+    strengthScore: stock.sectorScore,
+    marketTimestamp: "2026-07-14T10:30:00+08:00",
+    receivedAt: "2026-07-14T10:30:05+08:00",
+    status: "fresh",
+    source: "mock-provider",
+    isDemo: true,
   };
 }
 

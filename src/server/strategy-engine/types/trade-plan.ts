@@ -37,6 +37,7 @@ export type PriceLevel = {
 export type StrategyTradePlan = {
   code: string;
   name: string;
+  isDemoPlan: boolean;
   analysisTradingDate: string;
   marketTimestamp: string | null;
   dataSource: string | null;

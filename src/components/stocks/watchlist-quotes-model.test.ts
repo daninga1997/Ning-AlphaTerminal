@@ -24,7 +24,7 @@ function quote(overrides: Partial<StockQuote>): StockQuote {
     marketTimestamp: "2026-07-14T15:30:01+08:00",
     receivedAt: "2026-07-14T18:02:41+08:00",
     status: "delayed",
-    source: "AKShare stock_zh_a_spot",
+    source: "tencent",
     isDemo: false,
     strategyUsed: "sina_spot",
     ...overrides,
@@ -37,7 +37,7 @@ describe("watchlist quote model", () => {
     const merged = mergeQuoteRefreshResult(stocks, {
       data: [quote({})],
       meta: {
-        source: "AKShare stock_zh_a_spot",
+        source: "tencent",
         status: "delayed",
         marketTimestamp: "2026-07-14T15:30:01+08:00",
         receivedAt: "2026-07-14T18:02:41+08:00",
@@ -50,7 +50,7 @@ describe("watchlist quote model", () => {
     const stock = merged.find((item) => item.code === "002472")!;
     expect(stock.currentPrice).toBe(42.39);
     expect(stock.changePercent).toBe(5.98);
-    expect(stock.marketDataMeta?.source).toBe("AKShare stock_zh_a_spot");
+    expect(stock.marketDataMeta?.source).toBe("tencent");
     expect(stock.marketDataMeta?.strategyUsed).toBe("sina_spot");
   });
 
@@ -58,7 +58,7 @@ describe("watchlist quote model", () => {
     const stocks = mergeQuoteRefreshResult(analyzeAllStocks(), {
       data: [quote({})],
       meta: {
-        source: "AKShare stock_zh_a_spot",
+        source: "tencent",
         status: "delayed",
         marketTimestamp: "2026-07-14T15:30:01+08:00",
         receivedAt: "2026-07-14T18:02:41+08:00",

@@ -46,6 +46,7 @@ export type StrategyType =
 
 export type TradeDecisionPermission =
   | "full"
+  | "demo"
   | "watch_only"
   | "historical_only"
   | "blocked";

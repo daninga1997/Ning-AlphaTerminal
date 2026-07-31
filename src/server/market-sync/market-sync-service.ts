@@ -164,11 +164,11 @@ export class MarketSyncService {
       const results = coreSectorMappings.map((mapping) => scoreCoreSector(mapping, quotes, new Date()));
       const count = await this.repository.saveSectorSnapshots(results.map((result) => result.snapshot));
       const partial = results.some((result) => result.isPartial);
-      const summary = this.summary("sectors", startedAt, true, codes, count, [], null, false, "akshare_quote_sector_proxy", partial ? "partial" : "delayed");
+      const summary = this.summary("sectors", startedAt, true, codes, count, [], null, false, "tencent_quote_sector_proxy", partial ? "partial" : "delayed");
       await this.saveRun(summary, startedAt);
       return summary;
     } catch (error) {
-      const summary = this.summary("sectors", startedAt, false, codes, 0, codes, errorCodeOf(error), false, "akshare_quote_sector_proxy", "unavailable");
+      const summary = this.summary("sectors", startedAt, false, codes, 0, codes, errorCodeOf(error), false, "tencent_quote_sector_proxy", "unavailable");
       await this.saveRun(summary, startedAt);
       return summary;
     }
@@ -181,11 +181,11 @@ export class MarketSyncService {
       const quotes: StockQuote[] = await this.provider.getQuotes(codes);
       const overview = buildMarketOverviewFromQuotes(quotes, new Date());
       await this.repository.saveMarketOverview(toStoredMarketOverview(overview, new Date()));
-      const summary = this.summary("market_overview", startedAt, true, codes, 1, [], null, false, "akshare_quote_market_proxy", "partial");
+      const summary = this.summary("market_overview", startedAt, true, codes, 1, [], null, false, "tencent_quote_market_proxy", "partial");
       await this.saveRun(summary, startedAt);
       return summary;
     } catch (error) {
-      const summary = this.summary("market_overview", startedAt, false, codes, 0, codes, errorCodeOf(error), false, "akshare_quote_market_proxy", "unavailable");
+      const summary = this.summary("market_overview", startedAt, false, codes, 0, codes, errorCodeOf(error), false, "tencent_quote_market_proxy", "unavailable");
       await this.saveRun(summary, startedAt);
       return summary;
     }

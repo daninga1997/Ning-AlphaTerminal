@@ -27,7 +27,7 @@ export function buildMarketOverviewFromQuotes(quotes: StockQuote[], fetchedAt = 
     limitUpCount,
     limitDownCount,
     marketScore,
-    source: "AKShare stock_zh_a_spot market proxy",
+    source: "tencent quote market proxy",
     isDemo: false,
   };
 }

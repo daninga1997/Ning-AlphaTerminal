@@ -64,12 +64,24 @@ export function StockStrategyPanel({ output }: { output: StrategyEngineOutput | 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#586174]">Strategy Conclusion</p>
-          <h2 className="mt-1 text-lg font-semibold text-[#F4F7FB]">{actionText[plan.currentAction]}</h2>
+          <div className="mt-1 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#F4F7FB]">{actionText[plan.currentAction]}</h2>
+            {plan.isDemoPlan ? (
+              <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300">
+                演示计划
+              </span>
+            ) : null}
+          </div>
         </div>
         <span className="rounded-full border border-[#4F8CFF]/30 bg-[#4F8CFF]/10 px-3 py-1 text-xs font-semibold text-[#7AA7FF]">
           {plan.primaryStrategy ? strategyText[plan.primaryStrategy] : "无主策略"} · {plan.grade}
         </span>
       </div>
+      {plan.isDemoPlan ? (
+        <div className="mt-3 rounded-md border border-sky-400/20 bg-sky-400/10 p-3 text-xs leading-5 text-sky-100">
+          当前计划由演示行情生成，仅用于功能演示，不构成真实交易建议。
+        </div>
+      ) : null}
       <div className="mt-4 grid gap-3 md:grid-cols-4">
         <StrategyMetric label="关注区" value={`${plan.watchZone.low.toFixed(2)}-${plan.watchZone.high.toFixed(2)}`} />
         <StrategyMetric label="放弃追高" value={plan.chaseLimit.price.toFixed(2)} />
@@ -100,7 +112,10 @@ export function ReportsStrategySection({ items }: { items: StrategyWatchlistItem
           <div className="grid gap-2 rounded-md border border-[#252A33] bg-[#090A0D] p-3 text-sm md:grid-cols-[120px_1fr_120px]" key={item.code}>
             <span className="font-semibold text-[#F4F7FB]">{item.name} {item.code}</span>
             <span className="text-[#8B95A7]">{item.finalPlan.primaryStrategy ? strategyText[item.finalPlan.primaryStrategy] : "无主策略"} · {actionText[item.finalPlan.currentAction]}</span>
-            <span className="font-mono text-[#DCE4F0]">{item.integrity.permission}</span>
+            <span className="font-mono text-[#DCE4F0]">
+              {item.integrity.permission}
+              {item.finalPlan.isDemoPlan ? " · 演示" : ""}
+            </span>
           </div>
         ))}
       </div>
@@ -113,7 +128,12 @@ function StrategyCandidateCard({ item }: { item: StrategyWatchlistItem }) {
   return (
     <div className="rounded-md border border-[#252A33] bg-[#090A0D] p-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="font-semibold text-[#F4F7FB]">{item.name}</div>
+        <div className="flex items-center gap-1.5 font-semibold text-[#F4F7FB]">
+          {item.name}
+          {plan.isDemoPlan ? (
+            <span className="rounded bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-300">演示</span>
+          ) : null}
+        </div>
         <div className="font-mono text-xs text-[#8B95A7]">{item.code}</div>
       </div>
       <div className="mt-2 text-sm text-[#DCE4F0]">{actionText[plan.currentAction]}</div>

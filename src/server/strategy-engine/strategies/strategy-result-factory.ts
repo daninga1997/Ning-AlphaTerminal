@@ -26,10 +26,18 @@ export function buildStrategyResult(input: StrategyInput, args: {
 }): StrategyResult {
   const watchZone = calculateWatchZone(input);
   const entryPlans = buildEntryPlans(input, watchZone, args.strategyId);
+  const entryRiskRewards = entryPlans.map((entry) => {
+    const entryStop = calculateStopLoss(input, entry, args.strategyId);
+    const entryTargets = calculateTargets(input, entry, entryStop);
+    return calculateRiskReward(entry, entryStop, entryTargets.firstTarget);
+  });
+  entryPlans.forEach((entry, index) => {
+    entry.riskRewardRatio = entryRiskRewards[index];
+  });
   const primaryEntry = entryPlans[0];
   const stopLoss = calculateStopLoss(input, primaryEntry, args.strategyId);
   const targets = calculateTargets(input, primaryEntry, stopLoss);
-  const riskRewardRatio = calculateRiskReward(primaryEntry, stopLoss, targets.firstTarget);
+  const riskRewardRatio = entryRiskRewards[0] ?? 0;
   const chaseLimit = calculateChaseLimit(input, watchZone);
   const grade = resolveGrade(args.score);
   const stopDistancePercent = primaryEntry.plannedEntryPrice === 0 ? 100 : ((primaryEntry.plannedEntryPrice - stopLoss.price) / primaryEntry.plannedEntryPrice) * 100;
@@ -37,14 +45,18 @@ export function buildStrategyResult(input: StrategyInput, args: {
   const chaseInvalid = currentPrice > chaseLimit.price;
   const rrInvalid = riskRewardRatio < riskConfig.minRiskRewardForBuy;
   const hardInvalidReasons = args.invalidReasons;
-  const invalidReasons = [
+  const invalidReasons = Array.from(new Set([
     ...hardInvalidReasons,
     ...(chaseInvalid ? ["当前价超过放弃追高价"] : []),
     ...(rrInvalid ? ["风险收益比低于1.2"] : []),
-  ];
+  ]));
   const permission = input.integrityReport.permission;
   const matched = hardInvalidReasons.length === 0 && args.score >= 55;
-  const canBuy = matched && permission === "full" && riskRewardRatio >= riskConfig.minRiskRewardForBuy && !chaseInvalid;
+  const canBuy =
+    matched &&
+    (permission === "full" || permission === "demo") &&
+    riskRewardRatio >= riskConfig.minRiskRewardForBuy &&
+    !chaseInvalid;
   const suggestedPositionPercent = calculateSuggestedPosition({
     grade,
     marketCap: 0,
@@ -54,7 +66,6 @@ export function buildStrategyResult(input: StrategyInput, args: {
     marketPositionCap: getMarketPositionCap(input),
   });
   entryPlans.forEach((entry) => {
-    entry.riskRewardRatio = riskRewardRatio;
     entry.suggestedPositionPercent = Math.min(entry.suggestedPositionPercent, suggestedPositionPercent);
   });
   return {

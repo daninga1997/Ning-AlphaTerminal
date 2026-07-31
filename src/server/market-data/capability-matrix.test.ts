@@ -25,10 +25,22 @@ describe("market data capability matrix", () => {
         dailyBarsLastFailureAt: "2026-07-14T18:02:27+08:00",
         minuteBarsLastFailureAt: "2026-07-14T18:02:27+08:00",
       },
+      quoteMeta: {
+        source: "tencent",
+        status: "delayed",
+        marketTimestamp: "2026-07-14T18:02:41+08:00",
+        receivedAt: "2026-07-14T18:02:41+08:00",
+        isDemo: false,
+        mode: "live",
+        isReplay: false,
+        delayedSeconds: 0,
+        strategyUsed: "sina_spot",
+        upstreamErrorCode: null,
+      },
     });
 
     expect(matrix.quotes.currentStatus).toBe("delayed");
-    expect(matrix.quotes.strategyUsed).toBeNull();
+    expect(matrix.quotes.strategyUsed).toBe("sina_spot");
     expect(matrix.quotes.source).toBe("腾讯财经");
     expect(matrix.dailyBars.currentStatus).toBe("unavailable");
     expect(matrix.minuteBars.currentStatus).toBe("unavailable");
@@ -38,10 +50,10 @@ describe("market data capability matrix", () => {
   it("does not label unsupported sectors and market overview as available", () => {
     const matrix = buildCapabilityMatrix({
       mode: "live",
-      providerName: "akshare",
+      providerName: "tencent",
       health: {
         ok: true,
-        source: "akshare",
+        source: "tencent",
         mode: "live",
         capabilities: {
           supportsQuotes: true,

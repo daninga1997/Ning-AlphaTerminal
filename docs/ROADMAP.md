@@ -13,7 +13,7 @@
 ## V0.7
 
 - 建立 Market Data Layer、Data Integrity Layer、Trading Memory。
-- 接入 AKShare 公共数据服务。
+- 接入腾讯公开行情服务。
 - 建立本地市场数据仓库。
 
 ## V1.0

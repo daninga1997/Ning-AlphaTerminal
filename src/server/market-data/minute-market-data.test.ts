@@ -214,7 +214,7 @@ describe("cache, api and safety", () => {
   });
 
   it("非法股票代码返回400", () => {
-    expect(() => parseMinuteRequest("603228", new URLSearchParams("period=1m"))).toThrow(MarketDataError);
+    expect(() => parseMinuteRequest("12345", new URLSearchParams("period=1m"))).toThrow(MarketDataError);
   });
 
   it("允许深圳003代码请求分钟线", () => {

@@ -9,7 +9,7 @@ export class MarketDataError extends Error {
   }
 }
 
-const allowedStockCodePattern = /^(000|001|002|003)\d{3}$/;
+const allowedStockCodePattern = /^\d{6}$/;
 
 export function isAllowedStockCode(code: string): boolean {
   return allowedStockCodePattern.test(code);
@@ -17,6 +17,6 @@ export function isAllowedStockCode(code: string): boolean {
 
 export function assertAllowedStockCode(code: string): void {
   if (!isAllowedStockCode(code)) {
-    throw new MarketDataError("INVALID_STOCK_CODE", "股票代码无效", 400);
+    throw new MarketDataError("INVALID_STOCK_CODE", "股票代码无效（需要6位数字）", 400);
   }
 }

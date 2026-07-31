@@ -28,7 +28,7 @@ function scorePositivePercent(value: number, maxScore: number): number {
 
 export function scoreCoreSector(mapping: CoreSectorMapping, quotes: StockQuote[], fetchedAt = new Date()): SectorScoreResult {
   const sectorQuotes = quotes.filter((quote) => mapping.codes.includes(quote.code));
-  const source = sectorQuotes[0]?.source ?? "AKShare stock_zh_a_spot sector proxy";
+  const source = sectorQuotes[0]?.source ?? "tencent quote sector proxy";
   const averageChange = sectorQuotes.length === 0 ? 0 : sectorQuotes.reduce((sum, quote) => sum + quote.changePercent, 0) / sectorQuotes.length;
   const advancingCount = sectorQuotes.filter((quote) => quote.changePercent > 0).length;
   const decliningCount = sectorQuotes.filter((quote) => quote.changePercent < 0).length;

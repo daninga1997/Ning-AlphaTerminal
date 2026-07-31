@@ -84,6 +84,7 @@ const statusLabelMap: Record<DataIntegrityStatus, string> = {
 
 const permissionLabelMap: Record<TradeDecisionPermission, string> = {
   full: "完整",
+  demo: "演示",
   watch_only: "仅观察",
   historical_only: "历史分析",
   blocked: "已阻断",

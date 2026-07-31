@@ -29,28 +29,28 @@ function quote(code: string, changePercent = 1): StockQuote {
     marketTimestamp: "2026-07-14T15:00:00+08:00",
     receivedAt: "2026-07-14T15:00:01+08:00",
     status: "delayed",
-    source: "AKShare stock_zh_a_spot",
+    source: "tencent",
     isDemo: false,
     strategyUsed: "sina_spot",
   };
 }
 
 class FakeProvider implements MarketDataProvider {
-  readonly source = "akshare";
+  readonly source = "tencent";
   readonly mode = "live" as const;
   getQuotes = vi.fn(async (codes: string[]) => codes.map((code) => quote(code)));
   getQuote = vi.fn(async (code: string) => quote(code));
   getDailyBars = vi.fn(async (code: string): Promise<MarketDailyBar[]> => [
-    { code, date: "2026-07-14", open: 1, high: 2, low: 1, close: 2, previousClose: 1, volume: 100, amount: 200, turnoverRate: 1, source: "AKShare stock_zh_a_hist", isDemo: false },
+    { code, date: "2026-07-14", open: 1, high: 2, low: 1, close: 2, previousClose: 1, volume: 100, amount: 200, turnoverRate: 1, source: "tencent_daily", isDemo: false },
   ]);
   getMinuteBars = vi.fn(async (code: string): Promise<MinuteBar[]> => [
-    { code, timestamp: "2026-07-14T14:56:00+08:00", open: 1, high: 2, low: 1, close: 2, volume: 100, amount: 200, averagePrice: 2, previousClose: 1, source: "AKShare stock_zh_a_hist_min_em", receivedAt: "2026-07-14T15:00:00+08:00", status: "delayed", isDemo: false },
+    { code, timestamp: "2026-07-14T14:56:00+08:00", open: 1, high: 2, low: 1, close: 2, volume: 100, amount: 200, averagePrice: 2, previousClose: 1, source: "tencent_minute", receivedAt: "2026-07-14T15:00:00+08:00", status: "delayed", isDemo: false },
   ]);
   getSectorSnapshots = vi.fn(async (): Promise<SectorSnapshot[]> => []);
   getMarketOverview = vi.fn(async (): Promise<MarketOverview> => buildMarketOverviewFromQuotes([quote("002472")]));
   healthCheck = vi.fn(async (): Promise<ProviderHealth> => ({
     ok: true,
-    source: "akshare",
+    source: "tencent",
     mode: "live",
     capabilities: { supportsQuotes: true, supportsDailyBars: true, supportsMinuteBars: true, supportsSectors: false, supportsMarketOverview: false, minimumRefreshIntervalMs: 60_000, supportedMinutePeriods: ["1m"], isLicensedSource: false },
   }));

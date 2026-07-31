@@ -113,6 +113,7 @@ function statusLabel(report: DataIntegrityReport): string {
 function permissionLabel(report: DataIntegrityReport): string {
   switch (report.permission) {
     case "full": return "完整交易";
+    case "demo": return "演示";
     case "watch_only": return "仅观察";
     case "historical_only": return "历史分析";
     case "blocked": return "已阻断";

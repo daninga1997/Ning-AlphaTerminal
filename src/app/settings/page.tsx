@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   let minimumRefreshIntervalMs = liveConfig.minimumIntervalMs;
   const delaySeconds = 0;
   let isLicensedSource = false;
-  let akshareVersion = "-";
+  let providerVersion = "-";
   let lastSuccessAt = "-";
   let cacheStatus = "-";
   let capabilityMatrix: DataCapabilityMatrix | null = null;
@@ -31,7 +31,8 @@ export default async function SettingsPage() {
   try {
     const provider = getProvider(mode);
     const health = await provider.healthCheck() as Awaited<ReturnType<typeof provider.healthCheck>> & {
-      akshareVersion?: string;
+      providerVersion?: string;
+      version?: string;
       lastSuccessAt?: string | null;
       cache?: { entries?: number; lastSuccessEntries?: number };
       disclaimer?: string;
@@ -42,7 +43,7 @@ export default async function SettingsPage() {
     healthStatus = health.ok ? "健康" : "不可用";
     minimumRefreshIntervalMs = health.capabilities.minimumRefreshIntervalMs;
     isLicensedSource = health.capabilities.isLicensedSource;
-    akshareVersion = health.akshareVersion ?? "-";
+    providerVersion = health.providerVersion ?? health.version ?? "-";
     lastSuccessAt = health.lastSuccessAt ?? "-";
     cacheStatus = health.cache
       ? `entries ${health.cache.entries ?? 0} / last ${health.cache.lastSuccessEntries ?? 0}`
@@ -83,7 +84,7 @@ export default async function SettingsPage() {
           <SettingMetric label="当前延迟" value={`${delaySeconds} 秒`} />
           <SettingMetric label="是否正式授权数据源" value={isLicensedSource ? "是" : "否"} />
           <SettingMetric label="API密钥是否已配置" value={liveConfig.apiKeyConfigured ? "已配置" : "未配置"} />
-          <SettingMetric label="AKShare版本" value={akshareVersion} />
+          <SettingMetric label="行情源版本" value={providerVersion} />
           <SettingMetric label="最近成功请求" value={lastSuccessAt} />
           <SettingMetric label="缓存状态" value={cacheStatus} />
         </section>

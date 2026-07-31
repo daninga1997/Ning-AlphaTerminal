@@ -27,6 +27,8 @@ export function marketInvalidReasons(input: StrategyInput, shortTerm: boolean): 
   const score = getMarketScore(input);
   if (!input.marketOverview) reasons.push("市场概览缺失");
   if (score < 40 && shortTerm) reasons.push("市场评分低于40，禁止新增短线仓位");
-  if (input.integrityReport.permission !== "full") reasons.push("数据权限不是full，不能生成新的buy_allowed");
+  if (input.integrityReport.permission !== "full" && input.integrityReport.permission !== "demo") {
+    reasons.push("数据权限不是full，不能生成新的buy_allowed");
+  }
   return reasons;
 }

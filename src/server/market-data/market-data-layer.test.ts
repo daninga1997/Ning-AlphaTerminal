@@ -58,8 +58,14 @@ describe("market data provider", () => {
     expect(isAllowedStockCode("ABCDEF")).toBe(false);
   });
 
-  it("非000、001、002代码被拒绝", () => {
-    expect(isAllowedStockCode("603228")).toBe(false);
+  it("任意6位数字代码均可通过校验", () => {
+    expect(isAllowedStockCode("603228")).toBe(true);
+    expect(isAllowedStockCode("300750")).toBe(true);
+    expect(isAllowedStockCode("688981")).toBe(true);
+  });
+
+  it("非6位数字代码被拒绝", () => {
+    expect(isAllowedStockCode("12345")).toBe(false);
   });
 });
 

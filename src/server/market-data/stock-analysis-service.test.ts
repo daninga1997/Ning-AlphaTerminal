@@ -41,7 +41,7 @@ describe("stock detail market data loading", () => {
     provider.getQuote = async () => ({
       ...(await new MockMarketDataProvider().getQuote("002472")),
       status: "delayed",
-      source: "AKShare stock_zh_a_spot",
+      source: "tencent",
       isDemo: false,
       strategyUsed: "sina_spot",
     });

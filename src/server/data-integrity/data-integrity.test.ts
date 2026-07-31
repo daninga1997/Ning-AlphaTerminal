@@ -146,7 +146,7 @@ describe("Source Consistency", () => {
   it("Mock和Live混用被阻断", () => {
     const result = checkSourceConsistency({
       quote: { source: "mock", mode: "mock", isDemo: true },
-      daily: { source: "akshare", mode: "live", isDemo: false },
+      daily: { source: "tencent", mode: "live", isDemo: false },
       minute: null,
     });
     expect(result.isConsistent).toBe(false);
@@ -154,8 +154,8 @@ describe("Source Consistency", () => {
 
   it("纯Live源通过", () => {
     const result = checkSourceConsistency({
-      quote: { source: "akshare", mode: "live", isDemo: false },
-      daily: { source: "akshare", mode: "live", isDemo: false },
+      quote: { source: "tencent", mode: "live", isDemo: false },
+      daily: { source: "tencent", mode: "live", isDemo: false },
       minute: null,
     });
     expect(result.isConsistent).toBe(true);
@@ -163,7 +163,7 @@ describe("Source Consistency", () => {
 
   it("Replay和Live混用被阻断", () => {
     const result = checkSourceConsistency({
-      quote: { source: "akshare", mode: "live", isDemo: false },
+      quote: { source: "tencent", mode: "live", isDemo: false },
       daily: { source: "replay", mode: "replay", isDemo: false },
       minute: null,
     });
@@ -172,8 +172,8 @@ describe("Source Consistency", () => {
 
   it("不同Live源组合通过(带警告)", () => {
     const result = checkSourceConsistency({
-      quote: { source: "akshare_sina", mode: "live", isDemo: false },
-      daily: { source: "akshare_eastmoney", mode: "live", isDemo: false },
+      quote: { source: "tencent_sina", mode: "live", isDemo: false },
+      daily: { source: "tencent_eastmoney", mode: "live", isDemo: false },
       minute: null,
     });
     expect(result.isConsistent).toBe(true);
@@ -191,8 +191,8 @@ describe("Permission Matrix", () => {
       minuteBarsLatestDate: null,
       marketTimestamp: "2026-07-15T10:00:00+08:00",
       receivedAt: new Date().toISOString(),
-      quoteSource: "akshare",
-      dailySource: "akshare",
+      quoteSource: "tencent",
+      dailySource: "tencent",
       minuteSource: null,
       marketDataMode: "live",
       status: "complete",

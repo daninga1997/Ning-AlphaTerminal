@@ -21,7 +21,7 @@ export type TradingSession =
   | "closed"
   | "non_trading_day";
 
-export type Exchange = "SZSE";
+export type Exchange = "SZSE" | "SSE";
 
 export interface StockQuote {
   code: string;

@@ -15,7 +15,7 @@ const dailyBar: MarketDailyBar = {
   volume: 1000,
   amount: 41000,
   turnoverRate: 2,
-  source: "AKShare stock_zh_a_hist",
+  source: "tencent",
   isDemo: false,
 };
 
@@ -39,7 +39,7 @@ const quote: StockQuote = {
   marketTimestamp: "2026-07-14T15:00:00+08:00",
   receivedAt: "2026-07-14T15:00:01+08:00",
   status: "delayed",
-  source: "AKShare stock_zh_a_spot",
+  source: "tencent",
   isDemo: false,
   strategyUsed: "sina_spot",
 };
@@ -65,7 +65,7 @@ describe("market storage helpers", () => {
       volume: 100,
       amount: 200,
       averagePrice: 2,
-      source: "AKShare stock_zh_a_hist_min_em",
+      source: "tencent",
       fetchedAt: new Date(),
       dataStatus: "delayed" as const,
       checksum: "x",

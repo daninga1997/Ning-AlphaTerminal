@@ -1,5 +1,10 @@
 import type { MarketDataMode, StockQuote, MarketDailyBar, MinuteBar, SectorSnapshot, MarketOverview } from "../../../types/market-data";
-import type { DataIntegrityReport, DataIntegrityIssue, DataIntegrityStatus } from "../../../types/data-integrity";
+import type {
+  DataIntegrityReport,
+  DataIntegrityIssue,
+  DataIntegrityStatus,
+  TradeDecisionPermission,
+} from "../../../types/data-integrity";
 import { getExpectedIntradayTradingDate, getLatestExpectedTradingDate } from "../../trading-calendar/trading-day-resolver";
 import { buildMarketTimeLock } from "../market-time-lock";
 import { checkSourceConsistency } from "../source-consistency";
@@ -133,9 +138,10 @@ export function buildIntegrityReport(input: IntegrityReportInput): DataIntegrity
   };
 }
 
-function resolvePermission(status: DataIntegrityStatus): "full" | "watch_only" | "historical_only" | "blocked" {
+function resolvePermission(status: DataIntegrityStatus): TradeDecisionPermission {
   switch (status) {
     case "complete": return "full";
+    case "demo_only": return "demo";
     case "partial": return "watch_only";
     case "stale": return "historical_only";
     default: return "blocked";

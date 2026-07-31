@@ -4,7 +4,7 @@ A 股深圳主板交易观察网页的静态演示项目。
 
 ## 当前阶段
 
-Sprint 11 已完成：Alpha 龙头趋势共振策略引擎 V1。
+Sprint 11 已完成：Alpha 龙头趋势共振策略引擎 V1；后续已接入腾讯行情、模拟盘与策略回测。
 
 已完成：
 
@@ -21,7 +21,7 @@ Sprint 11 已完成：Alpha 龙头趋势共振策略引擎 V1。
 - 按股票名称或代码搜索
 - A/B 级演示机会筛选纯函数
 - 20 只股票独立详情页 `/stocks/[code]`
-- 固定、可重复的 120 日模拟日线数据
+- 固定、可重复的 260 日模拟日线数据
 - SMA、EMA、MACD、KDJ、RSI14、ATR14 等技术指标
 - 可解释短线评分模型
 - 可解释中线评分模型
@@ -43,40 +43,42 @@ Sprint 11 已完成：Alpha 龙头趋势共振策略引擎 V1。
 - `/api/strategies/stocks/[code]`
 - `/api/strategies/watchlist`
 - `/api/strategies/stocks/[code]/trade-plan`
+- 腾讯行情实时报价接入（`services/tencent-service`）
+- 全局股票搜索（`/api/market/search`）
+- 模拟盘交易（`/paper-trades`）
+- 策略回测（`/backtest`）
 
 当前仍未接入：
 
 - 券商级专业行情接口
 - API 密钥
 - AI 接口
-- 自动荐股
 - 真实建仓价格算法
 - 券商交易能力
-- Backtest
 - AI Engine
 - 自动参数优化
 
-## AKShare公开行情服务
+## 腾讯行情服务
 
-Sprint 8 增加独立 Python FastAPI 服务，用于通过 AKShare 获取 A 股公开数据。
+Live 模式通过独立 Python FastAPI 服务（`services/tencent-service`）获取腾讯公开行情报价。
 
 启动 Python 服务：
 
 ```powershell
-python -m venv services/akshare-service/.venv
-services\akshare-service\.venv\Scripts\python.exe -m pip install -r services/akshare-service/requirements-dev.txt
-powershell -ExecutionPolicy Bypass -File scripts/start-akshare-service.ps1
+python -m venv services/tencent-service/.venv
+services\tencent-service\.venv\Scripts\python.exe -m pip install -r services/tencent-service/requirements.txt
+npm run tencent:service
 ```
 
-Next.js 切换到 AKShare：
+Next.js 切换到 Live：
 
 ```env
 MARKET_DATA_MODE=live
-MARKET_DATA_LIVE_PROVIDER=akshare
-AKSHARE_SERVICE_BASE_URL=http://127.0.0.1:8001
+TENCENT_SERVICE_BASE_URL=http://127.0.0.1:8001
 ```
 
-AKShare 是公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。
+腾讯行情是公开数据接口，稳定性和时效性不等同于交易所或券商专业行情。
+实时报价之外的日线、分钟线、板块与市场概览数据来自本地数据仓库和同步流程。
 
 ## Alpha 策略引擎
 
@@ -100,17 +102,15 @@ powershell -ExecutionPolicy Bypass -File scripts/check-market-data.ps1
 
 ## 模拟数据说明
 
-当前股票基础信息、板块评分输入、静态价格快照和 120 日历史日线均为演示数据。
+当前股票基础信息、板块评分输入、静态价格快照和 260 日历史日线均为演示数据。
 
 评分、建仓区、止损位、目标位和风险收益比由本地纯函数根据模拟历史行情计算，不再作为人工写死的最终结果。
 
-观察池范围限制：
+演示模式支持任意 6 位 A 股代码（如 `000`/`001`/`002`/`003`/`300`/`600`/`601`/`603`/`688` 等）。
+观察池之外的代码会自动生成确定性的演示行情画像；默认观察池仍为 20 只核心股票。
 
-- 只允许 6 位股票代码
-- 只允许 `000`、`001`、`002` 开头
-- 用于模拟深圳主板观察池
-
-`603228 景旺电子` 不符合上述代码范围，已在静态观察池中替换为 `002436 兴森科技`。
+静态观察池以深圳主板标的为主，早期曾用 `002436 兴森科技` 替换 `603228 景旺电子`；
+演示模式本身已不受板块或观察池限制。
 
 ## 目录结构
 

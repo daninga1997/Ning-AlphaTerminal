@@ -114,7 +114,7 @@ describe("assessTencentQuoteResponse", () => {
   });
 
   it("rejects a non-Tencent source", () => {
-    expect(assessTencentQuoteResponse({ ...valid, meta: { ...valid.meta, source: "akshare" } })).toEqual({ ok: false, reason: "数据来源不是腾讯" });
+    expect(assessTencentQuoteResponse({ ...valid, meta: { ...valid.meta, source: "eastmoney" } })).toEqual({ ok: false, reason: "数据来源不是腾讯" });
   });
 
   it("rejects an empty or invalid quote list", () => {

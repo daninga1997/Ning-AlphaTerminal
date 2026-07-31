@@ -1,5 +1,5 @@
-import { mockMarketHistory } from "../../data/mock-market-history";
-import { mockStocks } from "../../data/mock-stocks";
+import { getMockMarketHistory } from "../../data/mock-market-history";
+import { getMockStockForCode, mockStocks } from "../../data/mock-stocks";
 import type {
   MarketDailyBar,
   MarketOverview,
@@ -26,9 +26,8 @@ export class MockMarketDataProvider implements MarketDataProvider {
 
   async getQuote(code: string): Promise<StockQuote> {
     assertAllowedStockCode(code);
-    const stock = mockStocks.find((item) => item.code === code);
-    if (!stock) throw new Error("股票不在观察池中");
-    const bars = mockMarketHistory[code];
+    const stock = mockStocks.find((item) => item.code === code) ?? getMockStockForCode(code);
+    const bars = getMockMarketHistory(code);
     const latest = bars.at(-1);
     const previous = bars.at(-2);
     const previousClose = previous?.close ?? stock.currentPrice / (1 + stock.changePercent / 100);
@@ -37,7 +36,7 @@ export class MockMarketDataProvider implements MarketDataProvider {
     return {
       code: stock.code,
       name: stock.name,
-      exchange: "SZSE",
+      exchange: code.startsWith("6") ? "SSE" : "SZSE",
       price,
       previousClose,
       open: latest?.open ?? price,
@@ -65,8 +64,7 @@ export class MockMarketDataProvider implements MarketDataProvider {
 
   async getDailyBars(code: string, options: DailyBarOptions = {}): Promise<MarketDailyBar[]> {
     assertAllowedStockCode(code);
-    const bars = mockMarketHistory[code];
-    if (!bars) throw new Error("股票不在观察池中");
+    const bars = getMockMarketHistory(code);
     const sliced = options.period === "120d" ? bars.slice(-120) : bars;
 
     return sliced.map((bar, index) => ({
