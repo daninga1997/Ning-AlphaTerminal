@@ -18,11 +18,12 @@ import {
   type SignalKind,
 } from "../src/lib/research/signal-study";
 
-const STRATEGIES: SignalKind[] = ["leader_first_yin", "late_session_daily", "trend_swing_compatible"];
+const STRATEGIES: SignalKind[] = ["leader_first_yin", "late_session_daily", "trend_swing_compatible", "trend_swing_filtered"];
 const STRATEGY_NAMES: Record<SignalKind, string> = {
   leader_first_yin: "龙头首阴修复",
   late_session_daily: "尾盘趋势（收盘确认）",
   trend_swing_compatible: "趋势波段",
+  trend_swing_filtered: "趋势波段（过滤版）",
 };
 
 async function main(): Promise<void> {
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
     leader_first_yin: [],
     late_session_daily: [],
     trend_swing_compatible: [],
+    trend_swing_filtered: [],
   };
   let loadedCount = 0;
 

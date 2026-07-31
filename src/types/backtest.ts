@@ -4,6 +4,7 @@ export type BacktestStrategyId =
   | "breakout"
   | "ema_cross"
   | "trend_swing_compatible"
+  | "trend_swing_filtered"
   | "leader_first_yin"
   | "late_session_daily";
 

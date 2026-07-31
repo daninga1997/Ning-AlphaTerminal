@@ -95,6 +95,20 @@ describe("backtest signals", () => {
     });
   });
 
+  it("enters filtered trend-swing only on MA60-rising, momentum, pullback-zone and moderate volume", () => {
+    const bars = Array.from({ length: 260 }, (_, index) => bar(index, 10 + index * 0.1, 1_000));
+    bars[259] = { ...bars[259]!, volume: 1_500 };
+
+    const entry = evaluateBacktestSignal({ strategy: "trend_swing_filtered", bars, index: 259, breakoutLookback: 20 });
+    expect(entry.entry).toBe(true);
+
+    // 追高场景：收盘远离 MA20 时不入场
+    const chasing = [...bars];
+    chasing[259] = { ...chasing[259]!, close: 100, high: 100, low: 100 };
+    const chased = evaluateBacktestSignal({ strategy: "trend_swing_filtered", bars: chasing, index: 259, breakoutLookback: 20 });
+    expect(chased.entry).toBe(false);
+  });
+
   it("returns null instead of a non-finite EMA for invalid values", () => {
     expect(calculateEma([10, Number.POSITIVE_INFINITY], 2)).toBeNull();
   });

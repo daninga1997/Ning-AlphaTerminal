@@ -2,7 +2,7 @@ import type { MarketDailyBar } from "../../types/market-data";
 import { isFirstYinRepairConfirmingToday } from "../../server/strategy-engine/factors/leader-factors";
 import { evaluateBacktestSignal } from "../backtest/backtest-strategies";
 
-export type SignalKind = "leader_first_yin" | "late_session_daily" | "trend_swing_compatible";
+export type SignalKind = "leader_first_yin" | "late_session_daily" | "trend_swing_compatible" | "trend_swing_filtered";
 
 export const STUDY_HORIZONS = [1, 3, 5, 10] as const;
 export type StudyHorizon = (typeof STUDY_HORIZONS)[number];

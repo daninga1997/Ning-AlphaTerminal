@@ -10,8 +10,59 @@ export function evaluateBacktestSignal(input: BacktestSignalInput): BacktestSign
   if (input.strategy === "breakout") return evaluateBreakoutSignal(input);
   if (input.strategy === "ema_cross") return evaluateEmaCrossSignal(input);
   if (input.strategy === "trend_swing_compatible") return evaluateTrendSwingCompatibleSignal(input);
+  if (input.strategy === "trend_swing_filtered") return evaluateTrendSwingFilteredSignal(input);
   if (input.strategy === "leader_first_yin") return evaluateLeaderFirstYinSignal(input);
   return evaluateLateSessionDailySignal(input);
+}
+
+// 趋势波段·过滤版（v2）：在 v1 基础上增加 MA60 上行、动量 >5%、不追高（收盘距 MA20 ≤6%）、
+// 量能温和（1.0-2.5 倍 20 日均量），用于修正 v1 在研究中的负超额（追高 + 频繁进出）。
+function evaluateTrendSwingFilteredSignal({ bars, index }: BacktestSignalInput): BacktestSignal {
+  if (index < trendSwingConfig.minDailyBars) {
+    return noSignal(`历史数据不足：趋势波段策略需要${trendSwingConfig.minDailyBars}个交易日`);
+  }
+  const currentBars = bars.slice(0, index + 1);
+  const latest = currentBars.at(-1)!;
+  const ma = movingAverages(currentBars);
+  const maFiveDaysAgo = movingAverages(currentBars.slice(0, -5));
+  const ma60FiveDaysAgo = maFiveDaysAgo.ma60;
+  const closeTwentyDaysAgo = currentBars.at(-21)?.close;
+  const volumeAverage = averageVolume(currentBars, currentBars.length - 1, 20);
+  if (
+    ma.ma20 === null ||
+    ma.ma60 === null ||
+    ma.ma10 === null ||
+    maFiveDaysAgo.ma20 === null ||
+    ma60FiveDaysAgo === null ||
+    closeTwentyDaysAgo === undefined ||
+    closeTwentyDaysAgo <= 0 ||
+    volumeAverage === null ||
+    volumeAverage <= 0
+  ) {
+    return noSignal("趋势波段过滤指标数据不足");
+  }
+
+  // 退出：收盘跌破 MA10（短线走弱）或 MA20 不再高于 MA60（中期趋势走弱）
+  if (latest.close < ma.ma10 || ma.ma20 <= ma.ma60) {
+    return { entry: false, exit: true, reason: latest.close < ma.ma10 ? "收盘跌破MA10" : "MA20不再高于MA60" };
+  }
+
+  const ma20Rising = ma.ma20 > maFiveDaysAgo.ma20;
+  const ma60Rising = ma.ma60 > ma60FiveDaysAgo;
+  const momentum = (latest.close / closeTwentyDaysAgo - 1) * 100;
+  const distanceToMa20 = (latest.close / ma.ma20 - 1) * 100;
+  const volumeRatio = latest.volume / volumeAverage;
+  if (
+    ma20Rising &&
+    ma60Rising &&
+    momentum > 5 &&
+    distanceToMa20 <= 6 &&
+    volumeRatio >= 1 &&
+    volumeRatio <= 2.5
+  ) {
+    return { entry: true, exit: false, reason: "趋势波段过滤确认（MA60上行+动量>5%+回踩区间+量能温和）" };
+  }
+  return noSignal("趋势波段过滤条件未满足");
 }
 
 // 龙头首阴修复（生产策略信号，日线可还原）：修复确认日入场，跌破前日低点退出
