@@ -12,6 +12,8 @@ const strategies: Array<{ id: BacktestStrategyId; label: string }> = [
   { id: "breakout", label: "突破" },
   { id: "ema_cross", label: "均线交叉" },
   { id: "trend_swing_compatible", label: "趋势波段兼容" },
+  { id: "leader_first_yin", label: "龙头首阴修复" },
+  { id: "late_session_daily", label: "尾盘趋势(日线)" },
 ];
 
 const initialDates = defaultDates();

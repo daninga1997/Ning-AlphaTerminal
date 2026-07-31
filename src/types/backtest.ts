@@ -1,6 +1,11 @@
 import type { MarketDailyBar } from "@/types/market-data";
 
-export type BacktestStrategyId = "breakout" | "ema_cross" | "trend_swing_compatible";
+export type BacktestStrategyId =
+  | "breakout"
+  | "ema_cross"
+  | "trend_swing_compatible"
+  | "leader_first_yin"
+  | "late_session_daily";
 
 export type BacktestSignal = {
   entry: boolean;

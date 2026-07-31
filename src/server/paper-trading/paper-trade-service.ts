@@ -5,7 +5,7 @@ export function createPaperTradeService(repository: PaperTradeRepository) {
   return {
     async create(input: CreatePaperTradeInput) {
       if (!input.isDemo) throw new Error("PAPER_TRADE_MUST_BE_DEMO");
-      if (!input.code.match(/^\d{6}$/)) throw new Error("INVALID_PAPER_TRADE_CODE");
+      if (!input.code.match(/^(000|001|002|003)\d{3}$/)) throw new Error("INVALID_PAPER_TRADE_CODE");
       if (![input.entryPrice, input.takeProfitPrice, input.stopLossPrice].every((value) => Number.isFinite(value) && value > 0)) {
         throw new Error("INVALID_PAPER_TRADE_PRICE");
       }
