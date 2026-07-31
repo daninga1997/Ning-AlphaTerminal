@@ -45,7 +45,7 @@ export class TencentProvider implements MarketDataProvider {
       volumeRatio: Number(item.volumeRatio ?? 0),
       bidPrice: Number(item.price ?? 0),
       askPrice: Number(item.price ?? 0),
-      marketTimestamp: String(item.marketTimestamp ?? ""),
+      marketTimestamp: String(item.marketTimestamp || item.receivedAt || ""),
       receivedAt: String(item.receivedAt ?? ""),
       status: (item.status as StockQuote["status"]) ?? "delayed",
       source: String(item.source ?? "tencent"),

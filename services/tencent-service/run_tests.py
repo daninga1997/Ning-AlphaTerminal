@@ -85,5 +85,5 @@ test("invalid text returns empty", t4)
 test("unknown code returns empty", t5)
 test("volume is integer shares", t6)
 
-print(f"\n{pailed+failed} tests: {passed} passed, {failed} failed")
+print(f"\n{passed+failed} tests: {passed} passed, {failed} failed")
 sys.exit(0 if failed == 0 else 1)

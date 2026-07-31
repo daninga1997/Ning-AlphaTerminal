@@ -160,7 +160,7 @@ async def get_quotes(codes: str = Query(..., description="股票代码逗号分�
             "amount": r.amount,
             "turnoverRate": r.turnover_rate,
             "volumeRatio": r.volume_ratio,
-            "marketTimestamp": r.upstream_market_time,
+            "marketTimestamp": r.upstream_market_time or received_at,
             "receivedAt": received_at,
             "source": r.source,
             "status": status,
@@ -186,6 +186,8 @@ async def get_quotes(codes: str = Query(..., description="股票代码逗号分�
 
 def _compute_status(upstream_time: str | None, is_trading: bool) -> str:
     if not upstream_time:
+        if not is_trading:
+            return "market_closed"
         return "unavailable"
     try:
         ts = datetime.fromisoformat(upstream_time)

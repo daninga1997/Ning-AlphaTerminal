@@ -131,7 +131,7 @@ function quoteToStockAnalysis(
     totalScore,
     tradeLevels,
     indicators,
-    dataUpdatedAt: meta.marketTimestamp ?? quote.marketTimestamp,
+    dataUpdatedAt: meta.marketTimestamp || quote.marketTimestamp || new Date().toISOString(),
     marketDataMeta: meta,
     technicalDataMeta: technicalMeta,
     dataCapabilityWarning: technicalWarning,
