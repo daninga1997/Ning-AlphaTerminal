@@ -88,6 +88,24 @@ export function StockStrategyPanel({ output }: { output: StrategyEngineOutput | 
         <StrategyMetric label="盈亏比" value={plan.riskRewardRatio.toFixed(2)} />
         <StrategyMetric label="建议仓位" value={`${plan.suggestedPositionPercent}%`} />
       </div>
+      {plan.factorBreakdown.length > 0 ? (
+        <div className="mt-4 rounded-md border border-[#252A33] bg-[#090A0D] p-3">
+          <div className="text-xs font-semibold text-[#8B95A7]">评分因子分解</div>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            {plan.factorBreakdown.map((factor) => (
+              <div className="rounded-md border border-[#252A33] bg-[#111318] p-2.5" key={factor.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[#F4F7FB]">{factor.name}</span>
+                  <span className="font-mono text-xs text-[#7AA7FF]">
+                    {factor.score}/{factor.maxScore}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-[#8B95A7]">{factor.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <ListBlock items={plan.triggerConditions} title="买入触发条件" />
         <ListBlock items={plan.cancellationConditions} title="取消条件" />

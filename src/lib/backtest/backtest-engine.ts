@@ -12,6 +12,9 @@ const SLIPPAGE_RATE = 0.0005;
 const COMMISSION_RATE = 0.0003;
 const MIN_COMMISSION = 5;
 const SELL_SIDE_RATE = 0.0005;
+// A 股主板涨跌停阈值：±10%，留 0.2% 缓冲（回测数据源限定深市主板）
+const LIMIT_UP_RATIO = 1.098;
+const LIMIT_DOWN_RATIO = 0.902;
 
 type PendingOrder = {
   side: "buy" | "sell";
@@ -38,18 +41,25 @@ export function runBacktest(input: RunBacktestInput): BacktestReport {
   const equityCurve: BacktestEquityPoint[] = [];
 
   input.bars.forEach((bar, index) => {
+    const previousClose = index > 0 ? input.bars[index - 1]!.close : bar.open;
     if (pendingOrder) {
       if (pendingOrder.side === "buy" && !position) {
-        const opened = openPosition(bar, pendingOrder, cash);
-        if (opened) {
-          position = opened.position;
-          cash = opened.cash;
+        // 一字涨停无法买入，订单当日失效
+        if (!isLimitUpOpen(bar, previousClose)) {
+          const opened = openPosition(bar, pendingOrder, cash);
+          if (opened) {
+            position = opened.position;
+            cash = opened.cash;
+          }
         }
       } else if (pendingOrder.side === "sell" && position) {
-        const closed = closePosition(bar, position, pendingOrder.reason, false);
-        cash += closed.netProceeds;
-        trades.push(closed.trade);
-        position = null;
+        // 一字跌停无法卖出，订单当日失效，持仓顺延
+        if (!isLimitDownOpen(bar, previousClose)) {
+          const closed = closePosition(bar, position, pendingOrder.reason, false);
+          cash += closed.netProceeds;
+          trades.push(closed.trade);
+          position = null;
+        }
       }
       pendingOrder = null;
     }
@@ -170,6 +180,14 @@ function toEquityPoint(bar: MarketDailyBar, cash: number, position: OpenPosition
 
 function commission(grossAmount: number): number {
   return roundMoney(Math.max(MIN_COMMISSION, grossAmount * COMMISSION_RATE));
+}
+
+function isLimitUpOpen(bar: MarketDailyBar, previousClose: number): boolean {
+  return previousClose > 0 && bar.open >= previousClose * LIMIT_UP_RATIO;
+}
+
+function isLimitDownOpen(bar: MarketDailyBar, previousClose: number): boolean {
+  return previousClose > 0 && bar.open <= previousClose * LIMIT_DOWN_RATIO;
 }
 
 function roundMoney(value: number): number {
