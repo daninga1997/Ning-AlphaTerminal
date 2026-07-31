@@ -16,8 +16,9 @@ export async function GET(request: Request) {
     const buf = await resp.arrayBuffer();
     const raw = iconv.decode(Buffer.from(buf), "gbk");
 
-    // smartbox format: v_hint="sz~code~name~shcd~..."
-    const re = /v_hint="sz~(\d{6})~([^~]+)~/g;
+    // smartbox format: v_hint="sh~code~name~...^sz~code~name~...^jj~code~name~..."
+    // sz~ 可能出现在开头（v_hint=" 之后）或 ^ 之后，因此直接匹配任意位置的 sz 段
+    const re = /sz~(\d{6})~([^~]+)~/g;
     const data: { code: string; name: string }[] = [];
     for (const m of raw.matchAll(re)) {
       if (/^(000|001|002|003)\d{3}$/.test(m[1])) {

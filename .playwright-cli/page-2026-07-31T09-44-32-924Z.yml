@@ -1,0 +1,68 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e812] [cursor=pointer]
+  - alert [ref=e818]
+  - generic [ref=e824]:
+    - complementary [ref=e825]:
+      - generic [ref=e826]:
+        - generic [ref=e827]: A股交易终端
+        - heading "深圳主板观察台" [level=1] [ref=e828]
+      - navigation [ref=e829]:
+        - link "策略回测" [ref=e830] [cursor=pointer]:
+          - /url: /backtest
+        - link "模拟交易" [ref=e831] [cursor=pointer]:
+          - /url: /paper-trades
+        - link "今日工作台" [ref=e832] [cursor=pointer]:
+          - /url: /
+        - link "市场情绪" [ref=e833] [cursor=pointer]:
+          - /url: "#"
+        - link "主线板块" [ref=e834] [cursor=pointer]:
+          - /url: "#"
+        - link "核心观察池" [ref=e835] [cursor=pointer]:
+          - /url: /watchlist
+        - link "个股详情" [ref=e836] [cursor=pointer]:
+          - /url: "#"
+        - link "四类报告" [ref=e837] [cursor=pointer]:
+          - /url: /reports
+        - link "交易记忆" [ref=e838] [cursor=pointer]:
+          - /url: /memory
+        - link "数据与设置" [ref=e839] [cursor=pointer]:
+          - /url: /settings
+      - button "☀️ 白天" [ref=e840]
+    - generic [ref=e841]:
+      - banner [ref=e842]:
+        - generic [ref=e843]:
+          - generic [ref=e844]:
+            - generic [ref=e845]:
+              - generic [ref=e846]: A股交易终端 v2.0
+              - generic [ref=e847]: "数据日期: 2026-07-31"
+            - generic [ref=e848]:
+              - heading "今日工作台" [level=2] [ref=e849]
+              - generic [ref=e850]: mock
+          - textbox "搜索深市股票，输代码回车直达" [ref=e853]
+          - generic [ref=e854]:
+            - generic [ref=e855]: 交易日状态：实时接入中
+            - generic [ref=e856]: 数据健康：mock
+      - generic [ref=e857]:
+        - main [ref=e858]:
+          - generic [ref=e859]:
+            - paragraph [ref=e860]: Stock Not Found
+            - heading "股票不存在" [level=1] [ref=e861]
+            - paragraph [ref=e862]: 股票代码不在支持范围内。当前仅支持深市主板（000/001/002/003 开头的 6 位代码）。
+            - link "返回观察池" [ref=e863] [cursor=pointer]:
+              - /url: /watchlist
+        - complementary [ref=e864]:
+          - generic [ref=e865]:
+            - heading "信息栏" [level=2] [ref=e866]
+            - generic [ref=e867]:
+              - generic [ref=e868]:
+                - generic [ref=e869]: 右侧信息栏预留
+                - paragraph [ref=e870]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e871]:
+                - generic [ref=e872]: 后续用于数据状态
+                - paragraph [ref=e873]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e874]:
+                - generic [ref=e875]: 后续用于风险提示
+                - paragraph [ref=e876]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e877]:
+                - generic [ref=e878]: 后续用于报告摘要
+                - paragraph [ref=e879]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
