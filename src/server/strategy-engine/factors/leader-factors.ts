@@ -57,6 +57,12 @@ export function hasFirstYinRepairStructure(bars: MarketDailyBar[]): boolean {
   return result !== null && result.repairIndex === bars.length - 1;
 }
 
+// 信号只在“修复首次确认日”触发一次，避免结构形成后每个上涨日重复确认造成重复信号
+export function isFirstYinRepairConfirmingToday(bars: MarketDailyBar[], index: number): boolean {
+  if (findFirstYinRepairUpTo(bars, index)?.repairIndex !== index) return false;
+  return findFirstYinRepairUpTo(bars, index - 1)?.repairIndex !== index - 1;
+}
+
 function isLaunchDay(bars: MarketDailyBar[], index: number): boolean {
   const previous = bars[index - 1];
   const current = bars[index];

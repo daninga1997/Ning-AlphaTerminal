@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MarketDailyBar } from "@/types/market-data";
-import { findFirstYinRepairUpTo, hasFirstYinRepairStructure } from "./leader-factors";
+import { findFirstYinRepairUpTo, hasFirstYinRepairStructure, isFirstYinRepairConfirmingToday } from "./leader-factors";
 
 function bar(index: number, close: number, options: Partial<Pick<MarketDailyBar, "open" | "high" | "low" | "volume">> = {}): MarketDailyBar {
   const open = options.open ?? close;
@@ -58,5 +58,12 @@ describe("leader first yin factors", () => {
     const bars = makeStructureBars();
     expect(hasFirstYinRepairStructure(bars.slice(0, 14))).toBe(true);
     expect(hasFirstYinRepairStructure(bars.slice(0, 13))).toBe(false);
+  });
+
+  it("信号只在修复首次确认日触发一次", () => {
+    const bars = makeStructureBars();
+    expect(isFirstYinRepairConfirmingToday(bars, 13)).toBe(true);
+    expect(isFirstYinRepairConfirmingToday(bars, 14)).toBe(false);
+    expect(isFirstYinRepairConfirmingToday(bars, 15)).toBe(false);
   });
 });

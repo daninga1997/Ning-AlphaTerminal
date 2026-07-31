@@ -1,6 +1,6 @@
 import { trendSwingConfig } from "../../server/strategy-engine/config/trend-swing-config";
 import { movingAverages } from "../../server/strategy-engine/factors/trend-factors";
-import { findFirstYinRepairUpTo } from "../../server/strategy-engine/factors/leader-factors";
+import { isFirstYinRepairConfirmingToday } from "../../server/strategy-engine/factors/leader-factors";
 import type { BacktestSignal, BacktestSignalInput } from "@/types/backtest";
 import { averageVolume, calculateEma, previousHighestHigh, previousLowestLow } from "./backtest-indicators";
 
@@ -16,8 +16,7 @@ export function evaluateBacktestSignal(input: BacktestSignalInput): BacktestSign
 
 // 龙头首阴修复（生产策略信号，日线可还原）：修复确认日入场，跌破前日低点退出
 function evaluateLeaderFirstYinSignal({ bars, index }: BacktestSignalInput): BacktestSignal {
-  const structure = findFirstYinRepairUpTo(bars, index);
-  if (structure && structure.repairIndex === index) {
+  if (isFirstYinRepairConfirmingToday(bars, index)) {
     return { entry: true, exit: false, reason: "龙头首阴修复确认（日线信号）" };
   }
   const current = bars[index];

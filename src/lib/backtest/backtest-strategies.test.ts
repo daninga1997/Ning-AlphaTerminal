@@ -61,8 +61,9 @@ describe("backtest signals", () => {
   });
 
   it("enters leader-first-yin when the repair confirms and exits below the prior low", () => {
-    const bars = Array.from({ length: 16 }, (_, index) => bar(index, index >= 9 ? 11 : 10));
+    const bars = Array.from({ length: 16 }, (_, index) => bar(index, index >= 10 ? 11 : 10));
     bars[10] = { ...bars[10]!, open: 10.5, high: 11.2, low: 10.4, volume: 2_000_000 };
+    bars[11] = { ...bars[11]!, open: 11.1, high: 11.4, low: 11, close: 11.2 };
     bars[12] = { ...bars[12]!, open: 11.1, high: 11.2, low: 10.6, volume: 1_200_000, close: 10.67 };
     bars[13] = { ...bars[13]!, open: 10.7, high: 11.1, low: 10.6, close: 11 };
 

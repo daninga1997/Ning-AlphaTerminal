@@ -180,11 +180,25 @@ describe("Alpha strategy engine V1", () => {
     expect(weakLeader.matched).toBe(false);
   });
 
-  it("late session strategy requires full minute data after 14:30", () => {
-    const result = runAllStrategies(input({ minuteBars: [] }));
+  it("late session falls back to close-of-day confirmation when minute data is missing", () => {
+    const dailyBars = makeDailyBars(260, { firstYin: true }).map((bar, index, all) =>
+      index === all.length - 1 ? { ...bar, volume: 2_000_000 } : bar,
+    );
+    const result = runAllStrategies(input({ minuteBars: [], dailyBars }));
+    const late = result.strategyResults.find((item) => item.strategyId === "late_session_momentum_v1")!;
+    expect(late.matched).toBe(true);
+    expect(late.warnings.join(" ")).toContain("收盘后日线确认");
+    expect(late.invalidReasons.join(" ")).not.toContain("14:30");
+  });
+
+  it("late session blocks close-of-day confirmation when daily volume is weak", () => {
+    const dailyBars = makeDailyBars(260, { firstYin: true }).map((bar, index, all) =>
+      index === all.length - 1 ? { ...bar, volume: 1 } : bar,
+    );
+    const result = runAllStrategies(input({ minuteBars: [], dailyBars }));
     const late = result.strategyResults.find((item) => item.strategyId === "late_session_momentum_v1")!;
     expect(late.matched).toBe(false);
-    expect(late.invalidReasons.join(" ")).toContain("14:30");
+    expect(late.invalidReasons.join(" ")).toContain("收盘量能不足");
   });
 
   it("trend swing scores higher when MA20 is above MA60 and drawdown is controlled", () => {

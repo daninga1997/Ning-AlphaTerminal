@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev --name init_trading_memory",
     "prisma:seed": "prisma db seed",
     "tencent:service": "cd services/tencent-service && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001",
+    "signal:study": "tsx scripts/run-signal-study.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -36,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "prettier": "^3.9.5",
+    "tsx": "^4.20.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
