@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { GlobalSearch } from "../stocks/global-search";
 
 const mobileNavigation = ["工作台", "情绪", "板块", "观察池", "个股", "报告", "复盘", "设置"];
 const mobileLinks = ["/", "#", "#", "/watchlist", "/stocks/002896", "/reports", "/memory", "/settings"];
@@ -49,6 +50,9 @@ export function TopBar() {
               {dataLabel}
             </span>
           </div>
+        </div>
+        <div className="relative w-full lg:max-w-[300px]">
+          <GlobalSearch />
         </div>
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-300 sm:flex sm:items-center">
           <div className="rounded-lg border border-emerald-400/15 bg-emerald-400/5 px-3 py-2">

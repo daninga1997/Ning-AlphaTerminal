@@ -7,6 +7,7 @@ GET /quotes?codes=002896,000988 → 实时报价
 
 from __future__ import annotations
 import asyncio
+import re
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -40,6 +41,22 @@ _last_minute_failure_at: str | None = None
 _last_daily_success_at: str | None = None
 _last_daily_failure_at: str | None = None
 
+
+@app.get("/search")
+async def search_stocks(query: str = ""):
+    if not query.strip():
+        return {"success": True, "data": [], "meta": {"source": "tencent"}}
+    url = f"https://smartbox.gtimg.cn/s3/?q={query}&t=all"
+    try:
+        resp = requests.get(url, timeout=8)
+        resp.encoding = "gbk"
+        text = resp.text
+        # Format: v_hint="sz~code~name~...~code~name~..."
+        re_result = re.findall(r'v_hint="sz~(\d{6})~([^~]+)~', text)
+        data = [{"code": code, "name": name} for code, name in re_result[:10]]
+        return {"success": True, "data": data, "meta": {"source": "tencent"}}
+    except Exception:
+        return {"success": False, "error": "搜索服务暂不可用"}
 
 @app.get("/health")
 async def health():

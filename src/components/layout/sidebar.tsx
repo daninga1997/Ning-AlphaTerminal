@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 const navigationItems = [
   { label: "策略回测", href: "/backtest" },
@@ -18,20 +20,24 @@ const navigationItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0d1118] px-4 py-5 lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-gray-200 bg-white px-4 py-5 dark:border-white/10 dark:bg-[#0d1118] lg:flex lg:flex-col">
       <div className="mb-8">
-        <div className="text-sm text-slate-400">A股交易终端</div>
-        <h1 className="mt-2 text-xl font-semibold text-white">深圳主板观察台</h1>
+        <div className="text-sm text-gray-500">A股交易终端</div>
+        <h1 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">深圳主板观察台</h1>
       </div>
-      <nav className="space-y-1">
+      <nav className="space-y-1 flex-1">
         {navigationItems.map((item) => (
           <Link
             className={`flex h-10 w-full items-center rounded-lg px-3 text-left text-sm transition ${
               item.href === pathname
-                ? "bg-cyan-400/12 text-cyan-200 ring-1 ring-cyan-300/20"
-                : "text-slate-400 hover:bg-white/6 hover:text-slate-100"
+                ? "bg-cyan-400/12 text-cyan-600 dark:text-cyan-200 ring-1 ring-cyan-300/20"
+                : "text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-white/6 dark:hover:text-slate-100"
             }`}
             href={item.href}
             key={item.label}
@@ -40,6 +46,14 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
+      {mounted && (
+        <button
+          className="mt-4 flex h-10 w-full items-center rounded-lg px-3 text-left text-sm text-gray-500 transition hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-white/6 dark:hover:text-slate-100"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? "☀️ 白天" : "🌙 深夜"}
+        </button>
+      )}
     </aside>
   );
 }
