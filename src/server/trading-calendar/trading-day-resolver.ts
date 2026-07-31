@@ -116,6 +116,14 @@ export function getLatestExpectedTradingDate(now: Date): string {
   return getPreviousTradingDay(todayStr);
 }
 
+export function getExpectedIntradayTradingDate(now: Date): string {
+  const phase = getTradingPhase(now);
+  if (phase === "auction" || phase === "morning" || phase === "lunch_break" || phase === "afternoon") {
+    return toShanghaiDateStr(now);
+  }
+  return getLatestExpectedTradingDate(now);
+}
+
 /**
  * 交易阶段判断
  */

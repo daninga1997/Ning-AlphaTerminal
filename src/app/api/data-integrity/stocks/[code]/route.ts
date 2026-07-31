@@ -5,6 +5,8 @@ import { MarketDataService } from "@/server/market-data/market-data-service";
 import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
 import { resolveTradeDecisionPermission } from "@/server/data-integrity/permission-matrix";
 import { getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
+import { buildStrategyInputForCode } from "@/server/strategy-engine/strategy-input-builder";
+import { watchlistCodes } from "@/server/market-sync/sector-mapping";
 
 export async function GET(
   request: Request,
@@ -20,23 +22,9 @@ export async function GET(
   const latestTradingDate = getLatestExpectedTradingDate(now);
 
   try {
-    const [quoteResult, barsResult] = await Promise.all([
-      service.getQuote(code),
-      service.getDailyBars(code),
-    ]);
-
-    const quote = quoteResult.success ? quoteResult.data : null;
-    const dailyBars = barsResult.success ? barsResult.data : null;
-
-    const report = buildIntegrityReport({
-      code,
-      mode,
-      quote,
-      dailyBars,
-      minuteBars: null,
-      sectors: null,
-      marketOverview: null,
-    });
+    const report = watchlistCodes.includes(code)
+      ? (await buildStrategyInputForCode(code)).integrityReport
+      : await buildProviderOnlyIntegrityReport(code, mode, service);
 
     const strategy: StrategyType = strategyParam ?? "generic_short_term";
     const permission = resolveTradeDecisionPermission(report, strategy);
@@ -93,4 +81,25 @@ export async function GET(
 
     return NextResponse.json(response);
   }
+}
+
+async function buildProviderOnlyIntegrityReport(
+  code: string,
+  mode: ReturnType<typeof getMarketDataMode>,
+  service: MarketDataService,
+) {
+  const [quoteResult, barsResult] = await Promise.all([
+    service.getQuote(code),
+    service.getDailyBars(code),
+  ]);
+
+  return buildIntegrityReport({
+    code,
+    mode,
+    quote: quoteResult.success ? quoteResult.data : null,
+    dailyBars: barsResult.success ? barsResult.data : null,
+    minuteBars: null,
+    sectors: null,
+    marketOverview: null,
+  });
 }

@@ -9,7 +9,57 @@ function latestClose(bars: DailyBar[]): number {
   return bars.at(-1)?.close ?? 0;
 }
 
+export function hasCalculatedTradeLevels(levels: TradeLevels): boolean {
+  const values = [
+    levels.firstEntryLow,
+    levels.firstEntryHigh,
+    levels.secondEntryLow,
+    levels.secondEntryHigh,
+    levels.chaseLimit,
+    levels.stopLoss,
+    levels.firstTarget,
+    levels.secondTarget,
+    levels.riskRewardRatio,
+  ];
+
+  return (
+    values.every((value) => Number.isFinite(value) && value > 0) &&
+    levels.secondEntryHigh < levels.firstEntryLow &&
+    levels.stopLoss < levels.firstEntryLow &&
+    levels.firstTarget > levels.firstEntryHigh &&
+    levels.secondTarget > levels.firstTarget
+  );
+}
+
+function unavailableTradeLevels(): TradeLevels {
+  return {
+    firstEntryLow: 0,
+    firstEntryHigh: 0,
+    secondEntryLow: 0,
+    secondEntryHigh: 0,
+    chaseLimit: 0,
+    stopLoss: 0,
+    firstTarget: 0,
+    secondTarget: 0,
+    riskRewardRatio: 0,
+    invalidReason: "日线数据不足，无法计算交易计划",
+  };
+}
+
 export function calculateTradeLevels(bars: DailyBar[], indicators: IndicatorSnapshot): TradeLevels {
+  if (
+    bars.length < 20 ||
+    bars.some(
+      (bar) =>
+        ![bar.open, bar.high, bar.low, bar.close, bar.volume].every(Number.isFinite) ||
+        bar.low <= 0 ||
+        bar.high < Math.max(bar.open, bar.close, bar.low) ||
+        bar.low > Math.min(bar.open, bar.close, bar.high),
+    )
+  ) {
+    return unavailableTradeLevels();
+  }
+
   const close = latestClose(bars);
   const atr = indicators.atr14 ?? Math.max(close * 0.03, 0.01);
   const ma10 = indicators.sma10 ?? close;

@@ -1,6 +1,6 @@
 import type { MarketDataMode, StockQuote, MarketDailyBar, MinuteBar, SectorSnapshot, MarketOverview } from "../../../types/market-data";
 import type { DataIntegrityReport, DataIntegrityIssue, DataIntegrityStatus } from "../../../types/data-integrity";
-import { getLatestExpectedTradingDate } from "../../trading-calendar/trading-day-resolver";
+import { getExpectedIntradayTradingDate, getLatestExpectedTradingDate } from "../../trading-calendar/trading-day-resolver";
 import { buildMarketTimeLock } from "../market-time-lock";
 import { checkSourceConsistency } from "../source-consistency";
 import { validateQuote } from "./quote-validator";
@@ -27,6 +27,7 @@ export interface IntegrityReportInput {
 export function buildIntegrityReport(input: IntegrityReportInput): DataIntegrityReport {
   const now = new Date();
   const latestTradingDate = getLatestExpectedTradingDate(now);
+  const intradayTradingDate = getExpectedIntradayTradingDate(now);
   const requestedAt = now.toISOString();
 
   const timeLock = buildMarketTimeLock({
@@ -41,9 +42,9 @@ export function buildIntegrityReport(input: IntegrityReportInput): DataIntegrity
   const expectedDailyBarsDate = timeLock.expectedDailyBarsDate;
 
   // 校验各个数据源
-  const quoteResult = validateQuote(input.quote, latestTradingDate);
+  const quoteResult = validateQuote(input.quote, intradayTradingDate);
   const dailyResult = validateDailyBars(input.dailyBars, expectedDailyBarsDate);
-  const minuteResult = validateMinuteBars(input.minuteBars, latestTradingDate);
+  const minuteResult = validateMinuteBars(input.minuteBars, intradayTradingDate);
   const sectorResult = validateSectors(input.sectors, latestTradingDate);
   const overviewResult = validateMarketOverview(input.marketOverview, latestTradingDate);
 

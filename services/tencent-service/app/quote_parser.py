@@ -89,8 +89,8 @@ def _parse_timestamp(raw: str) -> str | None:
             int(raw[12:14]),
             tzinfo=SHANGHAI,
         )
-        # 15:30之后的时间不能作为实时市场时间
-        if ts.time() > time(15, 30, 0):
+        # 腾讯会推送收盘后的结算快照；16:00 前仍属于当日数据，非交易时段会标记为 closed。
+        if ts.time() > time(16, 0):
             return None
         # 00:00-08:00不能作为实时市场时间
         if ts.time() < time(8, 0, 0):

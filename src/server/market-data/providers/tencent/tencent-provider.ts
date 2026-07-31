@@ -55,7 +55,7 @@ export class TencentProvider implements MarketDataProvider {
 
   async getDailyBars(code: string): Promise<MarketDailyBar[]> {
     try {
-      const url = `${TENCENT_BASE_URL}/history?symbol=${code}&period=day&count=120`;
+      const url = `${TENCENT_BASE_URL}/history?symbol=${code}&period=day&count=260`;
       const resp = await fetch(url, {
         cache: "no-store",
         signal: AbortSignal.timeout(20000),

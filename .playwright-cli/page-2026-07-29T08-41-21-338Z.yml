@@ -1,0 +1,78 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - generic [ref=e8]: A股交易终端 v2.0
+          - generic [ref=e10]:
+            - heading "今日工作台" [level=2] [ref=e11]
+            - generic [ref=e12]: 加载中...
+        - generic [ref=e13]:
+          - generic [ref=e14]: 交易日状态：实时接入中
+          - generic [ref=e15]: 数据健康：加载中...
+      - navigation [ref=e16]:
+        - link "工作台" [ref=e17] [cursor=pointer]:
+          - /url: /
+        - link "情绪" [ref=e18] [cursor=pointer]:
+          - /url: "#"
+        - link "板块" [ref=e19] [cursor=pointer]:
+          - /url: "#"
+        - link "观察池" [ref=e20] [cursor=pointer]:
+          - /url: /watchlist
+        - link "个股" [ref=e21] [cursor=pointer]:
+          - /url: /stocks/002896
+        - link "报告" [ref=e22] [cursor=pointer]:
+          - /url: /reports
+        - link "复盘" [ref=e23] [cursor=pointer]:
+          - /url: /memory
+        - link "设置" [ref=e24] [cursor=pointer]:
+          - /url: /settings
+    - generic [ref=e25]:
+      - main [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - generic [ref=e30]:
+                - paragraph [ref=e31]: Backtest
+                - heading "策略回测" [level=1] [ref=e32]
+                - paragraph [ref=e33]: 使用历史日线模拟执行，不产生真实订单或模拟交易记录。
+              - generic [ref=e34]: 演示成本假设
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - text: 股票代码
+                - textbox "股票代码" [ref=e37]: "002472"
+              - generic [ref=e38]:
+                - text: 开始日期
+                - textbox "开始日期" [ref=e39]: 2025-07-29
+              - generic [ref=e40]:
+                - text: 结束日期
+                - textbox "结束日期" [ref=e41]: 2026-07-29
+              - generic [ref=e42]:
+                - text: 策略
+                - generic [ref=e43]:
+                  - button "突破" [ref=e44]
+                  - button "均线交叉" [ref=e45]
+                  - button "趋势波段兼容" [ref=e46]
+              - generic [ref=e47]:
+                - text: 周期 N
+                - spinbutton "周期 N" [ref=e48]: "20"
+              - button "运行回测" [ref=e50]
+            - paragraph [ref=e51]: 初始资金 100,000 元 · 100 股整手 · 双向滑点 0.05% · 双向佣金 0.03%（最低 5 元）· 卖出附加费率 0.05%
+          - generic [ref=e52]: 设置回测范围后运行策略
+      - complementary [ref=e53]:
+        - generic [ref=e54]:
+          - heading "信息栏" [level=2] [ref=e55]
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic [ref=e58]: 右侧信息栏预留
+              - paragraph [ref=e59]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+            - generic [ref=e60]:
+              - generic [ref=e61]: 后续用于数据状态
+              - paragraph [ref=e62]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+            - generic [ref=e63]:
+              - generic [ref=e64]: 后续用于风险提示
+              - paragraph [ref=e65]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+            - generic [ref=e66]:
+              - generic [ref=e67]: 后续用于报告摘要
+              - paragraph [ref=e68]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+  - button "Open Next.js Dev Tools" [ref=e74] [cursor=pointer]

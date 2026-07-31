@@ -11,6 +11,7 @@ export interface MinuteBarsValidationResult {
 const LUNCH_START = "11:30";
 const LUNCH_END = "13:00";
 const MAX_STALE_SECONDS = 300; // 5分钟无新数据视为stale
+const MAX_FUTURE_BUCKET_MS = 60_000;
 
 /**
  * 分钟线数据字段完整性校验
@@ -52,7 +53,7 @@ export function validateMinuteBars(
     }
 
     // 未来时间检查
-    if (new Date(bar.timestamp).getTime() > Date.now()) {
+    if (new Date(bar.timestamp).getTime() > Date.now() + MAX_FUTURE_BUCKET_MS) {
       issues.push(critical("FUTURE_TIMESTAMP", `分钟线含未来时间: ${bar.timestamp}`));
     }
 

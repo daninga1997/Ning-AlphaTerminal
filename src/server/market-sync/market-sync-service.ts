@@ -9,6 +9,7 @@ import { toStoredDailyBar, toStoredMarketOverview, toStoredMinuteBar, toStoredQu
 import { coreSectorMappings, watchlistCodes } from "./sector-mapping";
 import { scoreCoreSector } from "./market-sector-scoring";
 import { buildMarketOverviewFromQuotes } from "./market-overview-scoring";
+import { trendSwingConfig } from "../strategy-engine/config/trend-swing-config";
 
 export type SyncSummary = {
   dataType: MarketStorageDataType;
@@ -40,6 +41,8 @@ export type SyncMinuteOptions = {
   end?: string;
   force?: boolean;
 };
+
+const MIN_DAILY_BARS_FOR_STRATEGY = trendSwingConfig.minDailyBars;
 
 function defaultStartForDaily(): string {
   const start = new Date();
@@ -92,7 +95,7 @@ export class MarketSyncService {
       for (const code of codes) {
         try {
           const existing = await this.repository.getDailyBars({ code, adjustment, limit: 260 });
-          const needsFetch = options.force || existing.length < 250;
+          const needsFetch = options.force || existing.length < MIN_DAILY_BARS_FOR_STRATEGY;
           if (!needsFetch) continue;
           const bars = await this.provider.getDailyBars(code, {
             adjust: adjustment,
@@ -101,7 +104,7 @@ export class MarketSyncService {
           });
           const stored = bars.slice(-300).map((bar) => toStoredDailyBar(bar, adjustment, new Date()));
           recordCount += await this.repository.upsertDailyBars(stored);
-          if (stored.length < 250) missingCodes.push(code);
+          if (stored.length < MIN_DAILY_BARS_FOR_STRATEGY) missingCodes.push(code);
         } catch (error) {
           errorCode = errorCodeOf(error);
           missingCodes.push(code);

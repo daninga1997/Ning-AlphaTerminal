@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import type { StockAnalysis } from "@/types/stock";
+import { hasCalculatedTradeLevels } from "../../../lib/trading/trade-levels";
 import { getSignalPresentation } from "../../../lib/presentation/signal-presentation";
 
 export function SaveTradingPlanButton({ stock }: { stock: StockAnalysis }) {
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
+  const hasPlan = hasCalculatedTradeLevels(stock.tradeLevels);
 
   const savePlan = async () => {
     setStatus("saving");
@@ -40,11 +42,11 @@ export function SaveTradingPlanButton({ stock }: { stock: StockAnalysis }) {
         </div>
         <button
           className="rounded-md bg-[#4F8CFF] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7AA7FF] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={status === "saving"}
+          disabled={status === "saving" || !hasPlan}
           onClick={() => setIsOpen(true)}
           type="button"
         >
-          保存为交易计划
+          {hasPlan ? "保存为交易计划" : "日线数据不足"}
         </button>
       </div>
 

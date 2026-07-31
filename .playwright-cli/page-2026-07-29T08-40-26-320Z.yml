@@ -1,0 +1,187 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: A股交易终端
+        - heading "深圳主板观察台" [level=1] [ref=e7]
+      - navigation [ref=e8]:
+        - link "策略回测" [ref=e9] [cursor=pointer]:
+          - /url: /backtest
+        - link "模拟交易" [ref=e10] [cursor=pointer]:
+          - /url: /paper-trades
+        - link "今日工作台" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "市场情绪" [ref=e12] [cursor=pointer]:
+          - /url: "#"
+        - link "主线板块" [ref=e13] [cursor=pointer]:
+          - /url: "#"
+        - link "核心观察池" [ref=e14] [cursor=pointer]:
+          - /url: /watchlist
+        - link "个股详情" [ref=e15] [cursor=pointer]:
+          - /url: "#"
+        - link "四类报告" [ref=e16] [cursor=pointer]:
+          - /url: /reports
+        - link "交易记忆" [ref=e17] [cursor=pointer]:
+          - /url: /memory
+        - link "数据与设置" [ref=e18] [cursor=pointer]:
+          - /url: /settings
+    - generic [ref=e19]:
+      - banner [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]:
+              - generic [ref=e24]: A股交易终端 v2.0
+              - generic [ref=e84]: "数据日期: 2026-07-29"
+            - generic [ref=e25]:
+              - heading "今日工作台" [level=2] [ref=e26]
+              - generic [ref=e27]: 腾讯行情
+          - generic [ref=e28]:
+            - generic [ref=e29]: 交易日状态：实时接入中
+            - generic [ref=e30]: 数据健康：腾讯行情
+      - generic [ref=e31]:
+        - main [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - generic [ref=e35]:
+                - generic [ref=e36]:
+                  - paragraph [ref=e37]: Backtest
+                  - heading "策略回测" [level=1] [ref=e38]
+                  - paragraph [ref=e39]: 使用历史日线模拟执行，不产生真实订单或模拟交易记录。
+                - generic [ref=e40]: 演示成本假设
+              - generic [ref=e41]:
+                - generic [ref=e42]:
+                  - text: 股票代码
+                  - textbox "股票代码" [ref=e43]: "002472"
+                - generic [ref=e44]:
+                  - text: 开始日期
+                  - textbox "开始日期" [ref=e45]: 2025-07-29
+                - generic [ref=e46]:
+                  - text: 结束日期
+                  - textbox "结束日期" [ref=e47]: 2026-07-29
+                - generic [ref=e48]:
+                  - text: 策略
+                  - generic [ref=e49]:
+                    - button "突破" [ref=e50]
+                    - button "均线交叉" [ref=e51]
+                    - button "趋势波段兼容" [ref=e52]
+                - generic [ref=e53]:
+                  - text: 周期 N
+                  - spinbutton "周期 N" [ref=e54]: "20"
+                - button "运行回测" [ref=e56]
+              - paragraph [ref=e57]: 初始资金 100,000 元 · 100 股整手 · 双向滑点 0.05% · 双向佣金 0.03%（最低 5 元）· 卖出附加费率 0.05%
+            - generic [ref=e86]:
+              - generic [ref=e87]:
+                - paragraph [ref=e88]: 初始资金
+                - paragraph [ref=e89]: ¥100,000.00
+              - generic [ref=e90]:
+                - paragraph [ref=e91]: 期末权益
+                - paragraph [ref=e92]: ¥92,074.37
+              - generic [ref=e93]:
+                - paragraph [ref=e94]: 总收益率
+                - paragraph [ref=e95]: "-7.93%"
+              - generic [ref=e96]:
+                - paragraph [ref=e97]: 年化收益率
+                - paragraph [ref=e98]: "-7.93%"
+              - generic [ref=e99]:
+                - paragraph [ref=e100]: 最大回撤
+                - paragraph [ref=e101]: 32.84%
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: 胜率
+                - paragraph [ref=e104]: +50.00%
+              - generic [ref=e105]:
+                - paragraph [ref=e106]: 盈亏比
+                - paragraph [ref=e107]: "0.69"
+              - generic [ref=e108]:
+                - paragraph [ref=e109]: 完成交易
+                - paragraph [ref=e110]: 4 次
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - paragraph [ref=e114]: Equity Curve
+                  - heading "资金曲线" [level=2] [ref=e115]
+                - generic [ref=e116]: 日线回测
+              - application [ref=e120]:
+                - generic [ref=e136]:
+                  - generic [ref=e137]:
+                    - generic [ref=e138]: 09-01
+                    - generic [ref=e140]: 10-16
+                    - generic [ref=e142]: 11-24
+                    - generic [ref=e144]: 12-31
+                    - generic [ref=e146]: 02-10
+                    - generic [ref=e148]: 03-27
+                    - generic [ref=e150]: 05-11
+                    - generic [ref=e152]: 06-17
+                    - generic [ref=e154]: 07-29
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: "90000"
+                    - generic [ref=e159]: "105000"
+                    - generic [ref=e161]: "120000"
+                    - generic [ref=e163]: "135000"
+                    - generic [ref=e165]: "150000"
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - paragraph [ref=e169]: Trade Log
+                - heading "交易明细" [level=2] [ref=e170]
+              - table [ref=e172]:
+                - rowgroup [ref=e173]:
+                  - row [ref=e174]:
+                    - columnheader "信号日" [ref=e175]
+                    - columnheader "买入" [ref=e176]
+                    - columnheader "卖出" [ref=e177]
+                    - columnheader "股数" [ref=e178]
+                    - columnheader "持有" [ref=e179]
+                    - columnheader "收益率" [ref=e180]
+                    - columnheader "退出原因" [ref=e181]
+                - rowgroup [ref=e182]:
+                  - row [ref=e183]:
+                    - cell "2025-09-08" [ref=e184]
+                    - cell "2025-09-09 · 38.53" [ref=e185]
+                    - cell "2025-10-14 · 45.48" [ref=e186]
+                    - cell "2,500" [ref=e187]
+                    - cell "35 天" [ref=e188]
+                    - cell "+17.91%" [ref=e189]
+                    - cell "跌破此前10日低点" [ref=e191]
+                  - row [ref=e192]:
+                    - cell "2025-12-08" [ref=e193]
+                    - cell "2025-12-09 · 40.94" [ref=e194]
+                    - cell "2026-01-30 · 41.25" [ref=e195]
+                    - cell "2,800" [ref=e196]
+                    - cell "52 天" [ref=e197]
+                    - cell "+0.65%" [ref=e198]
+                    - cell "跌破此前10日低点" [ref=e200]
+                  - row [ref=e201]:
+                    - cell "2026-05-06" [ref=e202]
+                    - cell "2026-05-07 · 39.70" [ref=e203]
+                    - cell "2026-06-01 · 38.93" [ref=e204]
+                    - cell "2,900" [ref=e205]
+                    - cell "25 天" [ref=e206]
+                    - cell "-2.05%" [ref=e207]
+                    - cell "跌破此前10日低点" [ref=e209]
+                  - row [ref=e210]:
+                    - cell "2026-07-03" [ref=e211]
+                    - cell "2026-07-06 · 48.57" [ref=e212]
+                    - cell "2026-07-20 · 38.37" [ref=e213]
+                    - cell "2,300" [ref=e214]
+                    - cell "14 天" [ref=e215]
+                    - cell "-21.09%" [ref=e216]
+                    - cell "跌破此前10日低点" [ref=e218]
+            - paragraph [ref=e219]: 数据来源 tencent · 243 个交易日 · 更新于 2026-07-29T16:40:25.779525+08:00
+        - complementary [ref=e59]:
+          - generic [ref=e60]:
+            - heading "信息栏" [level=2] [ref=e61]
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]: 右侧信息栏预留
+                - paragraph [ref=e65]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e66]:
+                - generic [ref=e67]: 后续用于数据状态
+                - paragraph [ref=e68]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e69]:
+                - generic [ref=e70]: 后续用于风险提示
+                - paragraph [ref=e71]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+              - generic [ref=e72]:
+                - generic [ref=e73]: 后续用于报告摘要
+                - paragraph [ref=e74]: 当前阶段仅展示布局占位，不连接任何行情、API 或数据库。
+  - button "Open Next.js Dev Tools" [ref=e80] [cursor=pointer]
+  - alert [ref=e85]
+  - generic [ref=e220]: "90000"

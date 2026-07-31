@@ -131,7 +131,7 @@ describe("market sync stabilization", () => {
 
   it("daily sync skips upstream when local qfq coverage is already sufficient", async () => {
     const repo = new FakeRepository();
-    repo.existingDailyCount = 260;
+    repo.existingDailyCount = 250;
     const provider = new FakeProvider();
     const summary = await new MarketSyncService(provider, repo).syncDailyBars({ codes: ["002472"] });
     expect(summary.success).toBe(true);

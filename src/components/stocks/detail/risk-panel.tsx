@@ -1,4 +1,5 @@
 import type { StockAnalysis } from "@/types/stock";
+import { hasCalculatedTradeLevels } from "../../../lib/trading/trade-levels";
 
 export function getRiskItems(stock: StockAnalysis): string[] {
   const risks = new Set<string>();
@@ -17,6 +18,7 @@ export function getRiskItems(stock: StockAnalysis): string[] {
 
 export function RiskPanel({ stock }: { stock: StockAnalysis }) {
   const risks = getRiskItems(stock);
+  const hasPlan = hasCalculatedTradeLevels(stock.tradeLevels);
 
   return (
     <section className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-5">
@@ -29,11 +31,13 @@ export function RiskPanel({ stock }: { stock: StockAnalysis }) {
         <RiskBlock title="当前主要风险" items={risks.length > 0 ? risks : ["暂无额外风险警告，但仍需遵守交易计划。"]} />
         <RiskBlock
           title="计划失效条件"
-          items={[
-            `跌破止损位 ${stock.tradeLevels.stopLoss.toFixed(2)}，当前计划失效。`,
-            `价格高于放弃追高价 ${stock.tradeLevels.chaseLimit.toFixed(2)}，不追入。`,
-            "未触及建仓条件不提前开仓。",
-          ]}
+          items={hasPlan
+            ? [
+                `跌破止损位 ${stock.tradeLevels.stopLoss.toFixed(2)}，当前计划失效。`,
+                `价格高于放弃追高价 ${stock.tradeLevels.chaseLimit.toFixed(2)}，不追入。`,
+                "未触及建仓条件不提前开仓。",
+              ]
+            : ["日线数据不足，尚未生成可执行的建仓、止损和目标条件。"]}
         />
         <RiskBlock
           title="板块退潮信号"

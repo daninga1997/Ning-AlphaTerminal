@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .quote_parser import parse_tencent_text, validate_price_consistency, is_trading_time
 from .kline_provider import KlineProviderError, fetch_minute_klines
+from .daily_history_provider import DailyHistoryError, fetch_daily_bars
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 app = FastAPI(title="Alpha Terminal — Tencent Market Data", version="1.0.0")
@@ -36,6 +37,8 @@ _sample_market_time: str | None = None
 _last_data_status: str = "unknown"
 _last_minute_success_at: str | None = None
 _last_minute_failure_at: str | None = None
+_last_daily_success_at: str | None = None
+_last_daily_failure_at: str | None = None
 
 
 @app.get("/health")
@@ -74,6 +77,8 @@ async def health():
         "last_failure_at": _last_failure_at,
         "minute_bars_last_success_at": _last_minute_success_at,
         "minute_bars_last_failure_at": _last_minute_failure_at,
+        "daily_bars_last_success_at": _last_daily_success_at,
+        "daily_bars_last_failure_at": _last_daily_failure_at,
         "last_error": _last_error_message,
         "server_time": now_iso,
     }
@@ -188,6 +193,41 @@ def _compute_minute_status(timestamp: str) -> str:
         return "closed"
     except (ValueError, TypeError):
         return "unavailable"
+
+
+@app.get("/history")
+async def get_history(
+    symbol: str = Query(..., min_length=6, max_length=8),
+    period: str = Query("day"),
+    count: int = Query(120, ge=20, le=500),
+):
+    """Return normalized Tencent daily bars for the stock-analysis pipeline."""
+    global _last_daily_success_at, _last_daily_failure_at
+
+    if period != "day":
+        return {"success": False, "error": {"code": "INVALID_PERIOD", "message": "Only day period is supported"}}
+
+    try:
+        bars = await asyncio.to_thread(fetch_daily_bars, symbol, count)
+    except ValueError:
+        _last_daily_failure_at = datetime.now(SHANGHAI).isoformat()
+        return {"success": False, "error": {"code": "INVALID_PARAMS", "message": "Invalid daily bar parameters"}}
+    except DailyHistoryError:
+        _last_daily_failure_at = datetime.now(SHANGHAI).isoformat()
+        return {"success": False, "error": {"code": "UPSTREAM_UNAVAILABLE", "message": "Daily bars are unavailable"}}
+
+    received_at = datetime.now(SHANGHAI).isoformat()
+    _last_daily_success_at = received_at
+    _last_daily_failure_at = None
+    return {
+        "success": True,
+        "symbol": symbol.removeprefix("sz"),
+        "period": period,
+        "count": len(bars),
+        "data": bars,
+        "source": "tencent",
+        "updated_at": received_at,
+    }
 
 
 @app.get("/api/kline/minute")

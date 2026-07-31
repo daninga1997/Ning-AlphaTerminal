@@ -13,8 +13,11 @@ import type {
 } from "@/server/market-storage/market-data-repository";
 import { PrismaMarketDataRepository } from "@/server/market-storage/prisma-market-data-repository";
 import { coreSectorMappings, watchlistCodes } from "@/server/market-sync/sector-mapping";
+import { getExpectedIntradayTradingDate, getLatestExpectedTradingDate } from "@/server/trading-calendar/trading-day-resolver";
 import type { StrategyInput, StrategySectorSnapshot } from "./types/strategy";
 import { StrategyEngineError } from "./strategy-errors";
+import { selectCompletedDailyBars } from "./completed-daily-bars";
+import { selectTradingDayMinuteBars } from "./current-minute-bars";
 
 export interface StrategyInputBuilderOptions {
   quoteOverride?: StockQuote | null;
@@ -37,8 +40,15 @@ export async function buildStrategyInputForCode(code: string, options: StrategyI
   const service = options.service ?? new MarketDataService();
   const repository = options.repository ?? new PrismaMarketDataRepository();
   const quote = "quoteOverride" in options ? options.quoteOverride ?? null : await loadQuote(code, service, repository);
-  const dailyBars = await loadDailyBars(code, service, repository, options.skipProviderHistorical ?? false);
-  const minuteBars = await loadMinuteBars(code, service, repository, options.skipProviderHistorical ?? false);
+  const rawDailyBars = await loadDailyBars(code, service, repository, options.skipProviderHistorical ?? false);
+  const dailyBars = selectCompletedDailyBars(rawDailyBars, getLatestExpectedTradingDate(new Date()));
+  const minuteBars = await loadMinuteBars(
+    code,
+    service,
+    repository,
+    options.skipProviderHistorical ?? false,
+    getExpectedIntradayTradingDate(new Date()),
+  );
   const sectors = "sectorsOverride" in options ? options.sectorsOverride ?? [] : await loadSectors(service, repository);
   const marketOverview = "marketOverviewOverride" in options ? options.marketOverviewOverride ?? null : await loadMarketOverview(service, repository);
   const integrityReport = buildIntegrityReport({
@@ -90,13 +100,19 @@ async function loadDailyBars(code: string, service: MarketDataService, repositor
   return stored.map(fromStoredDailyBar);
 }
 
-async function loadMinuteBars(code: string, service: MarketDataService, repository: MarketDataRepository, skipProviderHistorical: boolean): Promise<MinuteBar[]> {
-  const stored = await repository.getMinuteBars({ code, period: "1m", limit: 240 });
-  if (stored.length > 0) return stored.map(fromStoredMinuteBar);
+async function loadMinuteBars(
+  code: string,
+  service: MarketDataService,
+  repository: MarketDataRepository,
+  skipProviderHistorical: boolean,
+  tradingDate: string,
+): Promise<MinuteBar[]> {
+  const stored = await repository.getMinuteBars({ code, period: "1m", tradingDate, limit: 240 });
+  if (stored.length > 0) return selectTradingDayMinuteBars(stored.map(fromStoredMinuteBar), tradingDate);
   if (skipProviderHistorical && getMarketDataMode() === "live") return [];
   const result = await service.getMinuteBars(code, { period: "1m", limit: 240 });
-  if (result.success) return result.data;
-  return stored.map(fromStoredMinuteBar);
+  if (result.success) return selectTradingDayMinuteBars(result.data, tradingDate);
+  return selectTradingDayMinuteBars(stored.map(fromStoredMinuteBar), tradingDate);
 }
 
 async function loadSectors(service: MarketDataService, repository: MarketDataRepository): Promise<SectorSnapshot[]> {

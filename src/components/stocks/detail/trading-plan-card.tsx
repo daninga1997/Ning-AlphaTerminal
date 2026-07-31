@@ -1,9 +1,11 @@
 import type { StockAnalysis } from "@/types/stock";
+import { hasCalculatedTradeLevels } from "../../../lib/trading/trade-levels";
 import { getDecisionSummary } from "./decision-summary";
 
 export function TradingPlanCard({ stock }: { stock: StockAnalysis }) {
   const levels = stock.tradeLevels;
   const decision = getDecisionSummary(stock);
+  const hasPlan = hasCalculatedTradeLevels(levels);
 
   return (
     <section className="rounded-lg border border-[#252A33] bg-[#111318] p-5">
@@ -34,17 +36,17 @@ export function TradingPlanCard({ stock }: { stock: StockAnalysis }) {
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <PlanMetric
           label="第一建仓区"
-          value={`${levels.firstEntryLow.toFixed(2)} - ${levels.firstEntryHigh.toFixed(2)}`}
+          value={hasPlan ? `${levels.firstEntryLow.toFixed(2)} - ${levels.firstEntryHigh.toFixed(2)}` : "数据不足"}
         />
         <PlanMetric
           label="第二建仓区"
-          value={`${levels.secondEntryLow.toFixed(2)} - ${levels.secondEntryHigh.toFixed(2)}`}
+          value={hasPlan ? `${levels.secondEntryLow.toFixed(2)} - ${levels.secondEntryHigh.toFixed(2)}` : "数据不足"}
         />
-        <PlanMetric label="放弃追高价" value={levels.chaseLimit.toFixed(2)} />
-        <PlanMetric label="止损位" value={levels.stopLoss.toFixed(2)} />
-        <PlanMetric label="第一目标位" value={levels.firstTarget.toFixed(2)} />
-        <PlanMetric label="第二目标位" value={levels.secondTarget.toFixed(2)} />
-        <PlanMetric label="风险收益比" value={levels.riskRewardRatio.toFixed(2)} />
+        <PlanMetric label="放弃追高价" value={hasPlan ? levels.chaseLimit.toFixed(2) : "数据不足"} />
+        <PlanMetric label="止损位" value={hasPlan ? levels.stopLoss.toFixed(2) : "数据不足"} />
+        <PlanMetric label="第一目标位" value={hasPlan ? levels.firstTarget.toFixed(2) : "数据不足"} />
+        <PlanMetric label="第二目标位" value={hasPlan ? levels.secondTarget.toFixed(2) : "数据不足"} />
+        <PlanMetric label="风险收益比" value={hasPlan ? levels.riskRewardRatio.toFixed(2) : "数据不足"} />
         <PlanMetric label="建议操作状态" value={decision.actionLabel} />
       </div>
 

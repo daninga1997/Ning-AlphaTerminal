@@ -1,0 +1,3 @@
+-- SQLite persists Prisma enums as TEXT. The PaperTrade.status column has no
+-- CHECK constraint, so adding manual_closed requires no table rewrite and
+-- preserves every existing simulated trade record.

@@ -47,8 +47,17 @@ def test_market_timestamp_parsed_correctly():
     assert "15:00:00" in q.upstream_market_time
 
 
+def test_post_close_timestamp_within_settlement_window_is_preserved():
+    """腾讯收盘后的结算快照仍须保留交易日，供完整性校验识别今日报价。"""
+    text = TENCENT_SAMPLE.replace("20260715150000", "20260715154045")
+    result = parse_tencent_text(text, ["002896"])
+    q = result[0]
+    assert q.upstream_market_time is not None
+    assert "15:40:45" in q.upstream_market_time
+
+
 def test_invalid_timestamp_rejected():
-    """15:30之后的时间返回None"""
+    """收盘结算窗口外的时间返回None"""
     text = TENCENT_SAMPLE.replace("20260715150000", "20260715161436")
     result = parse_tencent_text(text, ["002896"])
     q = result[0]
@@ -100,7 +109,8 @@ def test_invalid_text_returns_empty():
 
 print("Running all tests...")
 tests = [test_volume_hand_to_shares, test_amount_wan_to_yuan, test_price_consistency_check,
-         test_market_timestamp_parsed_correctly, test_invalid_timestamp_rejected,
+         test_market_timestamp_parsed_correctly, test_post_close_timestamp_within_settlement_window_is_preserved,
+         test_invalid_timestamp_rejected,
          test_overnight_timestamp_rejected, test_status_live_during_trading,
          test_missing_fields_return_none, test_invalid_text_returns_empty]
 passed = 0

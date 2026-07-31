@@ -59,6 +59,14 @@ enum ReviewOutcome {
   open
 }
 
+enum PaperTradeStatus {
+  open
+  take_profit
+  stop_loss
+  expired
+  manual_closed
+}
+
 model TradingPlan {
   id                       String            @id @default(cuid())
   idempotencyKey           String            @unique
@@ -298,4 +306,30 @@ model DataFetchRun {
 
   @@index([dataType, createdAt])
   @@index([success])
+}
+
+model PaperTrade {
+  id                   String           @id @default(cuid())
+  code                 String
+  name                 String
+  sector               String
+  entryPrice           Float
+  entryTime            DateTime
+  entryTradingDate     String
+  takeProfitPrice      Float
+  stopLossPrice        Float
+  status               PaperTradeStatus @default(open)
+  exitPrice            Float?
+  exitTime             DateTime?
+  returnPercent        Float?
+  settlementReason     String?
+  openKey              String?          @unique
+  marketDataSource     String
+  marketTimestamp      DateTime
+  isDemo               Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([code, status])
+  @@index([status, entryTime])
 }

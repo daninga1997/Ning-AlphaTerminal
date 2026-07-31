@@ -3,8 +3,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { StockDetailView } from "@/components/stocks/stock-detail-view";
 import { mockStocks } from "@/data/mock-stocks";
 import { getStockDetailFromMarketData } from "@/server/market-data/stock-analysis-service";
-import { buildIntegrityReport } from "@/server/data-integrity/validators/integrity-report-builder";
-import { getMarketDataMode } from "@/server/market-data/provider-registry";
+import { buildStrategyInputForCode } from "@/server/strategy-engine/strategy-input-builder";
+import { runAllStrategies } from "@/server/strategy-engine/strategy-engine";
 
 export const revalidate = 60;
 
@@ -20,22 +20,17 @@ export default async function StockDetailPage({ params }: { params: Promise<{ co
     notFound();
   }
 
-  const mode = getMarketDataMode();
-  const stock = detail.stock;
-
-  const integrityReport = buildIntegrityReport({
-    code,
-    mode,
-    quote: null,
-    dailyBars: null,
-    minuteBars: null,
-    sectors: null,
-    marketOverview: null,
-  });
+  const strategyInput = await buildStrategyInputForCode(code);
+  const strategyOutput = runAllStrategies(strategyInput);
 
   return (
     <AppShell>
-      <StockDetailView bars={detail.bars} integrityReport={integrityReport} stock={detail.stock} />
+      <StockDetailView
+        bars={detail.bars}
+        integrityReport={strategyInput.integrityReport}
+        stock={detail.stock}
+        strategyOutput={strategyOutput}
+      />
     </AppShell>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navigationItems = [
   { label: "策略回测", href: "/backtest" },
+  { label: "模拟交易", href: "/paper-trades" },
   { label: "今日工作台", href: "/" },
   { label: "市场情绪", href: "#" },
   { label: "主线板块", href: "#" },

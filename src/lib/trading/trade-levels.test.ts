@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DailyBar } from "@/types/market";
 import { calculateIndicators } from "../indicators";
-import { calculateTradeLevels } from "./trade-levels";
+import { calculateTradeLevels, hasCalculatedTradeLevels } from "./trade-levels";
 
 function makeBars(step = 0.12): DailyBar[] {
   return Array.from({ length: 120 }, (_, index) => {
@@ -50,9 +50,17 @@ describe("trade-levels", () => {
   it("无合理盈亏比时返回 invalidReason", () => {
     const bars = makeBars(-0.03);
     const latest = bars.at(-1)!;
-    bars[119] = { ...latest, high: latest.close + 0.05, low: latest.close - 0.05 };
+    bars[119] = { ...latest, open: latest.close, high: latest.close + 0.05, low: latest.close - 0.05 };
     const levels = calculateTradeLevels(bars, calculateIndicators(bars));
 
     expect(levels.invalidReason).toBe("当前盈亏比不足");
+  });
+
+  it("日线数据不足时不生成交易价格", () => {
+    const bars = makeBars().slice(-19);
+    const levels = calculateTradeLevels(bars, calculateIndicators(bars));
+
+    expect(levels.invalidReason).toBe("日线数据不足，无法计算交易计划");
+    expect(hasCalculatedTradeLevels(levels)).toBe(false);
   });
 });
