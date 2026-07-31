@@ -25,13 +25,13 @@ describe("mock-market-history", () => {
     expect(first).toBe(second);
   });
 
-  it("观察池之外的任意6位代码也能生成确定性的模拟历史", () => {
-    const bars = getMockMarketHistory("600519");
+  it("观察池之外的深市主板代码也能生成确定性的模拟历史", () => {
+    const bars = getMockMarketHistory("000001");
     expect(bars).toHaveLength(HISTORY_LENGTH);
-    expect(JSON.stringify(getMockMarketHistory("600519"))).toBe(JSON.stringify(bars));
+    expect(JSON.stringify(getMockMarketHistory("000001"))).toBe(JSON.stringify(bars));
 
-    const profile = getMockStockForCode("600519");
-    expect(profile.code).toBe("600519");
+    const profile = getMockStockForCode("000001");
+    expect(profile.code).toBe("000001");
     expect(profile.sectorScore).toBeGreaterThanOrEqual(55);
   });
 });

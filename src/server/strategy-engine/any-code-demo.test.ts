@@ -7,7 +7,7 @@ import type { StrategyInput, StrategySectorSnapshot } from "./types/strategy";
 describe("strategy engine: any code in demo mode", () => {
   it("观察池之外的代码也能生成演示策略计划", async () => {
     const provider = new MockMarketDataProvider();
-    const code = "600519";
+    const code = "000001";
     const quote = await provider.getQuote(code);
     const dailyBars = await provider.getDailyBars(code, {});
     const minuteBars = await provider.getMinuteBars(code, { period: "1m", limit: 240 });

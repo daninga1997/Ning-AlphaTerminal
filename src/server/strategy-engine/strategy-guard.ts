@@ -2,7 +2,7 @@ import type { StrategyInput } from "./types/strategy";
 
 export function commonDataInvalidReasons(input: StrategyInput, options: { needsDaily?: number; needsMinute?: boolean; shortTerm?: boolean } = {}): string[] {
   const reasons: string[] = [];
-  if (!/^\d{6}$/.test(input.code)) reasons.push("股票代码格式无效（需要6位数字）");
+  if (!/^(000|001|002|003)\d{3}$/.test(input.code)) reasons.push("非深市主板观察范围");
   if (!input.quote) reasons.push("Quote缺失");
   if (options.needsDaily && input.dailyBars.length < options.needsDaily) reasons.push(`日线少于${options.needsDaily}根`);
   if (options.needsMinute && input.minuteBars.length === 0) reasons.push("分钟线缺失");

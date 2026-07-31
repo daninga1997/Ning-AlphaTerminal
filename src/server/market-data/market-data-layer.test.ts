@@ -58,13 +58,16 @@ describe("market data provider", () => {
     expect(isAllowedStockCode("ABCDEF")).toBe(false);
   });
 
-  it("任意6位数字代码均可通过校验", () => {
-    expect(isAllowedStockCode("603228")).toBe(true);
-    expect(isAllowedStockCode("300750")).toBe(true);
-    expect(isAllowedStockCode("688981")).toBe(true);
+  it("深市主板代码可通过校验", () => {
+    expect(isAllowedStockCode("000661")).toBe(true);
+    expect(isAllowedStockCode("002317")).toBe(true);
+    expect(isAllowedStockCode("003000")).toBe(true);
   });
 
-  it("非6位数字代码被拒绝", () => {
+  it("沪市、创业板、科创板及非6位代码被拒绝", () => {
+    expect(isAllowedStockCode("603228")).toBe(false);
+    expect(isAllowedStockCode("300750")).toBe(false);
+    expect(isAllowedStockCode("688981")).toBe(false);
     expect(isAllowedStockCode("12345")).toBe(false);
   });
 });

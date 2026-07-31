@@ -315,7 +315,7 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-// 观察池之外的任意 6 位代码：生成确定性的演示股票画像，保证同代码每次结果一致
+// 观察池之外的深市主板代码（000/001/002/003 开头）：生成确定性的演示股票画像，保证同代码每次结果一致
 export function getMockStockForCode(code: string): MockStock {
   const seed = demoSeed(code);
   return {

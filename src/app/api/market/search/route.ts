@@ -20,7 +20,9 @@ export async function GET(request: Request) {
     const re = /v_hint="sz~(\d{6})~([^~]+)~/g;
     const data: { code: string; name: string }[] = [];
     for (const m of raw.matchAll(re)) {
-      data.push({ code: m[1], name: m[2] });
+      if (/^(000|001|002|003)\d{3}$/.test(m[1])) {
+        data.push({ code: m[1], name: m[2] });
+      }
     }
     return NextResponse.json({ success: true, data: data.slice(0, 10), meta: { source: "tencent" } });
   } catch {

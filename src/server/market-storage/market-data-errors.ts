@@ -13,7 +13,7 @@ export function assertFiniteMarketNumber(value: number, field: string): void {
 }
 
 export function assertValidStockCode(code: string): void {
-  if (!/^\d{6}$/.test(code)) {
-    throw new MarketStorageError("INVALID_STOCK_CODE", "股票代码格式无效（需要6位数字）", 400);
+  if (!/^(000|001|002|003)\d{3}$/.test(code)) {
+    throw new MarketStorageError("INVALID_STOCK_CODE", "股票代码不在深市主板范围内（000/001/002/003开头）", 400);
   }
 }

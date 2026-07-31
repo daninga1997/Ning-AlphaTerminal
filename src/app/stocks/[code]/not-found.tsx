@@ -10,7 +10,7 @@ export default function StockNotFound() {
         </p>
         <h1 className="mt-3 text-2xl font-semibold text-[#F4F7FB]">股票不存在</h1>
         <p className="mt-3 text-sm leading-6 text-[#8B95A7]">
-          股票代码格式无效或当前模式下无法获取该股票的演示数据（需要 6 位数字代码）。
+          股票代码不在支持范围内。当前仅支持深市主板（000/001/002/003 开头的 6 位代码）。
         </p>
         <Link
           className="mt-6 inline-flex h-10 items-center rounded-md border border-[#252A33] bg-[#090A0D] px-4 text-sm font-semibold text-[#F4F7FB] hover:border-[#4F8CFF]/40"
