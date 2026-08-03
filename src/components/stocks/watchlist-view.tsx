@@ -8,6 +8,7 @@ import { StockCard } from "./stock-card";
 import { StockFiltersPanel } from "./stock-filters";
 import { WatchlistQuoteRefresh } from "./watchlist-quote-refresh";
 import { applyQuoteRefreshFailure, mergeQuoteRefreshResult, type QuoteRefreshPayload } from "./watchlist-quotes-model";
+import { GlobalSearch } from "./global-search";
 import { getLatestWatchlistUpdate, getWatchlistStatistics } from "./watchlist-view-model";
 import type { StrategyWatchlistItem } from "@/server/strategy-engine/strategy-watchlist-service";
 
@@ -30,9 +31,6 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
   const updatedAt = useMemo(() => getLatestWatchlistUpdate(liveStocks), [liveStocks]);
   const marketDataMeta = (liveStocks[0] as (StockAnalysis & { marketDataMeta?: MarketDataMeta }) | undefined)
     ?.marketDataMeta;
-  const handleQueryChange = useCallback((query: string) => {
-    setFilters((currentFilters) => ({ ...currentFilters, query }));
-  }, []);
   const handleQuoteSuccess = useCallback((payload: QuoteRefreshPayload) => {
     setLiveStocks((currentStocks) => mergeQuoteRefreshResult(currentStocks, payload));
   }, []);
@@ -64,15 +62,9 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
             </div>
           </div>
 
-          <label className="block">
-            <span className="sr-only">搜索股票名称或代码</span>
-            <input
-              className="h-11 w-full rounded-md border border-[#252A33] bg-[#090A0D] px-4 text-sm text-[#F4F7FB] outline-none transition placeholder:text-[#586174] focus:border-[#7AA7FF]"
-              onChange={(event) => handleQueryChange(event.target.value)}
-              placeholder="搜索股票名称或代码，例如 002472"
-              value={filters.query}
-            />
-          </label>
+          <div className="flex justify-end">
+            <GlobalSearch />
+          </div>
         </div>
       </section>
       <WatchlistQuoteRefresh codes={watchlistCodes} onFailure={handleQuoteFailure} onSuccess={handleQuoteSuccess} />
@@ -93,9 +85,7 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
         </div>
       ) : (
         <div className="rounded-lg border border-[#252A33] bg-[#111318] p-6 text-center text-sm text-[#8B95A7]">
-          {filters.query
-            ? `观察池中没有匹配“${filters.query}”。任意深市主板股票请用顶栏“搜索深市股票”（输入代码回车直达，或输入名称从下拉选择）。`
-            : "没有匹配的观察股，请调整搜索或筛选条件。"}
+          没有匹配的观察股，请调整板块或信号筛选条件；查找任意深市主板股票请使用「搜索深市股票」搜索框。
         </div>
       )}
 
