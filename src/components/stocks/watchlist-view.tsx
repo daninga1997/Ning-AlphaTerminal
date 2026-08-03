@@ -93,7 +93,9 @@ export function WatchlistView({ stocks, strategyItems = [] }: { stocks: StockAna
         </div>
       ) : (
         <div className="rounded-lg border border-[#252A33] bg-[#111318] p-6 text-center text-sm text-[#8B95A7]">
-          没有匹配的观察股，请调整搜索或筛选条件。
+          {filters.query
+            ? `观察池中没有匹配“${filters.query}”。任意深市主板股票请用顶栏“搜索深市股票”（输入代码回车直达，或输入名称从下拉选择）。`
+            : "没有匹配的观察股，请调整搜索或筛选条件。"}
         </div>
       )}
 
