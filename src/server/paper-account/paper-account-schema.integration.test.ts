@@ -173,7 +173,7 @@ describe("paper account ledger Prisma schema", () => {
 
     const defaults = await prisma.paperAccountSettingsVersion.create({
       data: {
-        scopeKey: "new-account-default",
+        scopeKey: "schema-test-settings-scope",
         accountId: null,
         version: 1,
         initialCashForNewAccountsFen: fen("10000000"),
