@@ -333,3 +333,280 @@ model PaperTrade {
   @@index([code, status])
   @@index([status, entryTime])
 }
+
+enum PaperAccountStatus {
+  active
+  suspended
+  closed
+}
+
+enum PaperOrderSide {
+  buy
+  sell
+}
+
+enum PaperOrderStatus {
+  pending_confirmation
+  confirmed
+  rejected
+  partially_filled
+  filled
+  cancelled
+  failed
+}
+
+enum CashLedgerDirection {
+  credit
+  debit
+}
+
+enum CashLedgerType {
+  initial_cash
+  cash_adjustment
+  buy_settlement
+  sell_settlement
+  fee
+  realized_pnl
+}
+
+enum PaperWorkerStatus {
+  idle
+  running
+  paused
+  degraded
+}
+
+model PaperAccount {
+  id                String             @id @default(cuid())
+  accountKey        String             @unique
+  initialCashFen    BigInt
+  availableCashFen  BigInt
+  frozenCashFen     BigInt
+  realizedPnlFen    BigInt
+  cumulativeFeesFen BigInt
+  accountVersion    Int                @default(1)
+  status            PaperAccountStatus @default(active)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  settingsVersions  PaperAccountSettingsVersion[]
+  positions         PaperPosition[]
+  orders            PaperOrder[]
+  cashLedgerEntries CashLedgerEntry[]
+  auditLogs         PaperAuditLog[]
+  workerStates      PaperWorkerState[]
+
+  @@index([status, createdAt])
+}
+
+model PaperAccountSettingsVersion {
+  id                           String   @id @default(cuid())
+  scopeKey                     String
+  accountId                    String?
+  version                      Int
+  initialCashForNewAccountsFen BigInt?
+  commissionRatePpm            Int
+  minimumCommissionFen         BigInt
+  stampDutySellRatePpm         Int
+  transferFeeRatePpm           Int
+  maxSingleStockBp             Int
+  maxTotalPositionBp           Int
+  maxRiskBp                    Int
+  actorId                      String
+  idempotencyKey               String?  @unique
+  createdAt                    DateTime @default(now())
+
+  account PaperAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, version])
+  @@index([accountId, version])
+  @@index([createdAt])
+}
+
+model PaperPosition {
+  id               String   @id @default(cuid())
+  accountId        String
+  code             String
+  totalQuantity    Int
+  sellableQuantity Int
+  frozenQuantity   Int
+  averageCostFen   BigInt
+  realizedPnlFen   BigInt
+  version          Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  account   PaperAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  lots      PaperLot[]
+  orders    PaperOrder[]
+  exitRules ExitRule[]
+
+  @@unique([accountId, code])
+  @@index([accountId, updatedAt])
+  @@index([code])
+}
+
+model PaperLot {
+  id                  String   @id @default(cuid())
+  positionId          String
+  acquiredSequence    Int
+  acquiredTradingDate String
+  sellableTradingDate String
+  originalQuantity    Int
+  remainingQuantity   Int
+  priceFen            BigInt
+  buyFeeFen           BigInt
+  createdAt           DateTime @default(now())
+
+  position PaperPosition @relation(fields: [positionId], references: [id], onDelete: Restrict)
+
+  @@unique([positionId, acquiredSequence])
+  @@index([positionId, sellableTradingDate])
+  @@index([sellableTradingDate])
+}
+
+model PaperOrder {
+  id               String           @id @default(cuid())
+  accountId        String
+  positionId       String?
+  code             String
+  side             PaperOrderSide
+  quantity         Int
+  priceFen         BigInt?
+  status           PaperOrderStatus
+  riskSnapshotJson String
+  settingsVersion  Int
+  idempotencyKey   String?          @unique
+  version          Int              @default(1)
+  confirmedAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  account           PaperAccount      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  position          PaperPosition?    @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  fills             PaperFill[]
+  cashLedgerEntries CashLedgerEntry[] @relation("PaperOrderCashLedgerEntries")
+
+  @@index([accountId, status, createdAt])
+  @@index([positionId, createdAt])
+  @@index([code, status])
+}
+
+model PaperFill {
+  id             String   @id @default(cuid())
+  orderId        String
+  sequence       Int
+  quantity       Int
+  priceFen       BigInt
+  notionalFen    BigInt
+  commissionFen  BigInt
+  stampDutyFen   BigInt
+  transferFeeFen BigInt
+  tradingDate    String
+  executedAt     DateTime
+  createdAt      DateTime @default(now())
+
+  order PaperOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, sequence])
+  @@index([tradingDate, executedAt])
+  @@index([executedAt])
+}
+
+model CashLedgerEntry {
+  id              String              @id @default(cuid())
+  accountId       String
+  orderId         String?
+  sequence        Int
+  direction       CashLedgerDirection
+  type            CashLedgerType
+  amountFen       BigInt
+  balanceAfterFen BigInt
+  idempotencyKey  String?             @unique
+  metadataJson    String?
+  occurredAt      DateTime
+  createdAt       DateTime            @default(now())
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  order   PaperOrder?  @relation("PaperOrderCashLedgerEntries", fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, sequence])
+  @@index([accountId, occurredAt])
+  @@index([orderId])
+}
+
+model ExitRule {
+  id                     String    @id @default(cuid())
+  positionId             String
+  version                Int
+  settingsVersion        Int
+  firstTargetPriceFen    BigInt
+  secondTargetPriceFen   BigInt
+  stopPriceFen           BigInt
+  firstTargetExecutedAt  DateTime?
+  secondTargetExecutedAt DateTime?
+  isActive               Boolean   @default(true)
+  actorId                String
+  idempotencyKey         String?   @unique
+  confirmedAt            DateTime
+  supersededAt           DateTime?
+  createdAt              DateTime  @default(now())
+
+  position PaperPosition @relation(fields: [positionId], references: [id], onDelete: Restrict)
+
+  @@unique([positionId, version])
+  @@index([positionId, isActive])
+}
+
+model PaperAuditLog {
+  id             String   @id @default(cuid())
+  accountId      String
+  sequence       Int
+  action         String
+  actorId        String
+  entityType     String
+  entityId       String?
+  payloadJson    String
+  idempotencyKey String?  @unique
+  occurredAt     DateTime
+  createdAt      DateTime @default(now())
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, sequence])
+  @@index([accountId, occurredAt])
+  @@index([entityType, entityId])
+}
+
+model PaperWorkerState {
+  id                    String            @id @default(cuid())
+  accountId             String
+  code                  String
+  status                PaperWorkerStatus @default(idle)
+  lastProcessedMinuteAt DateTime?
+  lastSuccessfulCheckAt DateTime?
+  lastErrorCode         String?
+  version               Int               @default(1)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, code])
+  @@index([status, lastSuccessfulCheckAt])
+}
+
+model WorkerLease {
+  id          String   @id @default(cuid())
+  leaseKey    String   @unique
+  ownerId     String
+  acquiredAt  DateTime
+  heartbeatAt DateTime
+  expiresAt   DateTime
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
+}
