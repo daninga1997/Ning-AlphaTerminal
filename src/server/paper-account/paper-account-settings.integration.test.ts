@@ -9,11 +9,13 @@ const unitOfWork = createPrismaPaperAccountUnitOfWork(prisma);
 const settingsService = createPaperAccountSettingsService(unitOfWork);
 const cashAdjustmentService = createPaperAccountCashAdjustmentService(unitOfWork);
 
+const task8FixtureNamespace = "task8-paper-account-settings";
+
 let sequence = 0;
 
 function uniqueKey(prefix: string): string {
   sequence += 1;
-  return `${prefix}-${Date.now()}-${sequence}`;
+  return `${task8FixtureNamespace}-${prefix}-${sequence}`;
 }
 
 const occurredAt = "2026-08-04T02:00:00.000Z";
