@@ -88,7 +88,7 @@
 - Produces: `MoneyFen`、`PriceFen`、`RatePpm`、`BasisPoints`、`BoardLotQuantity`、`assertNonNegativeBigInt(value: bigint, code: string): bigint`、`assertSafeNonNegativeInteger(value: number, code: string): number`、`roundHalfUp(numerator: bigint, denominator: bigint): bigint`、`multiplyByRatePpm(amountFen: bigint, ratePpm: number): bigint`、`roundDownToBoardLot(quantity: number): BoardLotQuantity`、`formatFen(amountFen: bigint): string`、`parseFen(value: string): bigint`、`toDecimalString(value: bigint): string`。
 - 后续依赖：所有领域计算、Repository DTO 和服务只使用这些标量类型表示账本金额、价格和费率。
 
-- [ ] **Step 1: 写入失败的金额与舍入测试。**
+- [x] **Step 1: 写入失败的金额与舍入测试。**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -138,12 +138,12 @@ describe("money", () => {
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/lib/paper-account/money.test.ts`  
 Expected: FAIL，因为 `./money`、`multiplyByRatePpm` 和 `roundDownToBoardLot` 尚不存在。
 
-- [ ] **Step 3: 创建标量类型和最小整数工具。**
+- [x] **Step 3: 创建标量类型和最小整数工具。**
 
 ```ts
 export type MoneyFen = bigint;
@@ -185,14 +185,14 @@ export function roundDownToBoardLot(quantity: number): BoardLotQuantity {
 
 实现 `assertSafeNonNegativeInteger`、`parseFen`、`toDecimalString`、`formatFen` 与 SQLite 有符号 64 位范围校验。`parseFen` 只接受十进制非负整数字符串；负数费率、非整数数量、除数小于 `1n`、超出 SQLite `BigInt` 范围和非十进制金额均抛出固定错误码。
 
-- [ ] **Step 4: 扩展目标测试并运行通过。**
+- [x] **Step 4: 扩展目标测试并运行通过。**
 
 测试 SQLite 有符号 64 位上界外的金额被拒绝、`500n` 分格式化为 `5.00`、`parseFen("500")` 返回 `500n`、非十进制字符串被拒绝、`10` ppm 与 `250` ppm 的比例计算，以及 `0` 股与 `100` 股的整手结果。`roundHalfUp` 另行覆盖恰好半分向上、低于半分向下、高于半分向上、负 `numerator` 抛出 `ROUND_NUMERATOR_MUST_BE_NON_NEGATIVE`，以及零或负 `denominator` 抛出 `ROUND_DENOMINATOR_MUST_BE_POSITIVE`；本系统比例金额只接受非负 `bigint`。
 
 Run: `npx vitest run src/lib/paper-account/money.test.ts`  
 Expected: PASS，金额和价格结果均保持为 `bigint`，费率与数量均为已校验的 `number`。
 
-- [ ] **Step 5: 提交独立基础类型变更。**
+- [x] **Step 5: 提交独立基础类型变更。**
 
 ```bash
 git add src/lib/paper-account/paper-account-types.ts src/lib/paper-account/money.ts src/lib/paper-account/money.test.ts
@@ -214,7 +214,7 @@ git commit -m "feat: add paper account money primitives"
 - `FeeSchedule`: `{ commissionRatePpm: RatePpm; minimumCommissionFen: MoneyFen; stampDutySellRatePpm: RatePpm; transferFeeRatePpm: RatePpm }`。
 - `TradeFeeBreakdown`: `{ notionalFen: MoneyFen; commissionFen: MoneyFen; stampDutyFen: MoneyFen; transferFeeFen: MoneyFen; totalFeeFen: MoneyFen }`。
 
-- [ ] **Step 1: 写入失败的费用测试。**
+- [x] **Step 1: 写入失败的费用测试。**
 
 ```ts
 const defaultSchedule = {
@@ -247,23 +247,23 @@ it("charges stamp duty only when selling", () => {
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/lib/paper-account/fee-calculator.test.ts`  
 Expected: FAIL，因为 `calculateTradeFees` 尚不存在。
 
-- [ ] **Step 3: 实现唯一的费用计算器。**
+- [x] **Step 3: 实现唯一的费用计算器。**
 
 `calculateTradeFees` 先以 `BigInt(quantity) × priceFen` 计算 `notionalFen`，佣金取比例费用与 `minimumCommissionFen` 的较大值；买入印花税固定为 `0n`，卖出按 `stampDutySellRatePpm` 计算；过户费双向计算；总费用为三项之和。所有金额字段保持 `bigint`，数量与费率在转换前验证为安全非负 `number`。
 
-- [ ] **Step 4: 运行完整费用测试。**
+- [x] **Step 4: 运行完整费用测试。**
 
 补充佣金比例高于最低值、双向过户费、金额半分向上舍入、零数量拒绝与默认费率常量测试。
 
 Run: `npx vitest run src/lib/paper-account/fee-calculator.test.ts`  
 Expected: PASS，买入不收印花税，卖出收印花税，过户费双向收取。
 
-- [ ] **Step 5: 提交费用模块。**
+- [x] **Step 5: 提交费用模块。**
 
 ```bash
 git add src/lib/paper-account/fee-calculator.ts src/lib/paper-account/fee-calculator.test.ts
@@ -287,7 +287,7 @@ git commit -m "feat: add paper account fee calculator"
 - `RiskExceptionPlan`: `{ quantity: 100; plannedLossFen: MoneyFen; actualRiskBp: BasisPoints; exceededRiskBp: BasisPoints }`。
 - `RiskSizingResult`: `{ riskQuantity: number; singleStockQuantity: number; totalPositionQuantity: number; cashQuantity: number; selectedQuantity: BoardLotQuantity; limitingConstraint: "risk" | "single_stock" | "total_position" | "cash" | "board_lot" | "none"; riskExceptionRequired: boolean; riskExceptionPlan: RiskExceptionPlan | null }`。
 
-- [ ] **Step 1: 写入失败的三约束测试。**
+- [x] **Step 1: 写入失败的三约束测试。**
 
 ```ts
 it("selects the smallest board-lot quantity across risk, single-stock, and total-position limits", () => {
@@ -308,12 +308,12 @@ it("selects the smallest board-lot quantity across risk, single-stock, and total
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/lib/paper-account/risk-sizing.test.ts`  
 Expected: FAIL，因为 `calculateRiskSizing` 尚不存在。
 
-- [ ] **Step 3: 实现完整费用驱动的风险搜索。**
+- [x] **Step 3: 实现完整费用驱动的风险搜索。**
 
 `calculatePlannedLoss` 必须对给定整手数量分别调用完整的 `calculateTradeFees`：买入成交额与买入费用、止损价卖出成交额与卖出费用；`plannedLossFen = buyNotionalFen + buyFeesFen - stopSellNotionalFen + stopSellFeesFen`。它不得把最低佣金按每股分摊。
 
@@ -321,14 +321,14 @@ Expected: FAIL，因为 `calculateRiskSizing` 尚不存在。
 
 只有当 100 股满足单股上限、总仓位上限和可用现金限制，但其 `plannedLossFen` 超过 2% 风险上限时，`riskExceptionRequired` 才能为 `true`；此时返回 `riskExceptionPlan`，其 `actualRiskBp` 用向上取整的 `plannedLossFen × 10_000 / equityFen` 计算，`exceededRiskBp` 为超出 `maxRiskBp` 的正差。本阶段只计算该计划，不创建确认或例外订单。
 
-- [ ] **Step 4: 运行完整风险测试。**
+- [x] **Step 4: 运行完整风险测试。**
 
 覆盖完整买入/止损卖出费用下的计划亏损、2% 风险限制、30% 单股限制、80% 总仓位限制、现金限制、四类候选值最小选择、100 股向下取整、止损不低于买入价拒绝、二分搜索最终复核、风险例外条件和 `actualRiskBp`/`exceededRiskBp`。所有金额断言使用 `n` 后缀，例如 `expect(result.plannedLossFen).toBe(12_345n)`。
 
 Run: `npx vitest run src/lib/paper-account/risk-sizing.test.ts`  
 Expected: PASS，所有金额均为 `bigint`，最终数量同时满足风险、单股、总仓位和现金限制；例外计划只在 100 股违反风险限制但满足其余三项限制时输出。
 
-- [ ] **Step 5: 提交风险计算模块。**
+- [x] **Step 5: 提交风险计算模块。**
 
 ```bash
 git add src/lib/paper-account/risk-sizing.ts src/lib/paper-account/risk-sizing.test.ts
@@ -356,7 +356,7 @@ git commit -m "feat: add paper account risk sizing"
 - `AvailableLot`: `{ lotId: string; acquiredSequence: number; remainingQuantity: number }`。
 - `TradingDayCalendar`: `{ nextTradingDay(afterTradingDate: string): string | null }`，真实交易日历实现留给后续市场数据阶段；本阶段只定义端口与确定性测试替身。
 
-- [ ] **Step 1: 写入失败的成本与批次测试。**
+- [x] **Step 1: 写入失败的成本与批次测试。**
 
 ```ts
 it("calculates an inclusive-fee weighted cost across two buys", () => {
@@ -384,23 +384,23 @@ it("allocates a sell across lots in FIFO order", () => {
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/lib/paper-account/position-cost.test.ts src/lib/paper-account/lot-allocation.test.ts src/lib/paper-account/break-even-stop.test.ts src/lib/paper-account/t1-calendar.test.ts`  
 Expected: FAIL，因为四个领域模块尚不存在。
 
-- [ ] **Step 3: 实现四个单一职责纯模块。**
+- [x] **Step 3: 实现四个单一职责纯模块。**
 
 `calculateWeightedPositionCost` 返回总数量、总成本分和每股含费成本分；`allocateLotsFifo` 按 `acquiredSequence` 升序分配并在数量超过可用量时抛出 `INSUFFICIENT_SELLABLE_LOTS`；`calculateBreakEvenStop` 通过单调递增的分价搜索调用 `calculateTradeFees({ side: "sell" })`，返回使总净回款不低于未收回成本的最小 `PriceFen`；`getNextSellableTradingDay` 调用注入日历并在空值时抛出 `NEXT_TRADING_DAY_UNAVAILABLE`。
 
-- [ ] **Step 4: 运行完整领域测试。**
+- [x] **Step 4: 运行完整领域测试。**
 
 修正并验证加权成本精确值 `221_000n` 分、FIFO 部分扣减、批次不足拒绝、第一目标后的含费用保本价、卖出最低佣金影响、周末/节假日替身返回的下一交易日，以及日历无结果错误。
 
 Run: `npx vitest run src/lib/paper-account/position-cost.test.ts src/lib/paper-account/lot-allocation.test.ts src/lib/paper-account/break-even-stop.test.ts src/lib/paper-account/t1-calendar.test.ts`  
 Expected: PASS，所有输入和输出均不使用浮点账本值。
 
-- [ ] **Step 5: 提交持仓领域模块。**
+- [x] **Step 5: 提交持仓领域模块。**
 
 ```bash
 git add src/lib/paper-account/position-cost.ts src/lib/paper-account/lot-allocation.ts src/lib/paper-account/break-even-stop.ts src/lib/paper-account/t1-calendar.ts src/lib/paper-account/position-cost.test.ts src/lib/paper-account/lot-allocation.test.ts src/lib/paper-account/break-even-stop.test.ts src/lib/paper-account/t1-calendar.test.ts
@@ -422,7 +422,7 @@ git commit -m "feat: add paper account position calculations"
 - Produces: Prisma 模型 `PaperAccount`、`PaperAccountSettingsVersion`、`PaperPosition`、`PaperLot`、`PaperOrder`、`PaperFill`、`CashLedgerEntry`、`ExitRule`、`PaperAuditLog`、`PaperWorkerState`、`WorkerLease` 和对应枚举。
 - 枚举至少包含：`PaperOrderStatus`（`proposed`、`awaiting_confirmation`、`confirmed`、`executing`、`filled`、`requires_reconfirmation`、`pending_t1`、`rejected`、`cancelled`、`failed`、`expired`）、`CashLedgerDirection`、`CashLedgerType`、`PaperOrderSide`、`PaperOrderType`、`PaperAccountStatus`、`PaperWorkerStatus`。
 
-- [ ] **Step 1: 写入失败的数据库模式集成测试。**
+- [x] **Step 1: 写入失败的数据库模式集成测试。**
 
 ```ts
 it("creates one account with immutable integer ledger rows and one settings version", async () => {
@@ -528,12 +528,12 @@ it("enforces global uniqueness for settings idempotency keys", async () => {
 
 测试还必须验证：`PaperPosition` 的 `[accountId, code]` 唯一性、`PaperLot` 的 `[positionId, acquiredSequence]` 唯一性、`PaperOrder`/`CashLedgerEntry`/`PaperAuditLog` 的非空幂等键唯一性、`PaperFill` 的 `[orderId, sequence]` 唯一性、`ExitRule` 的 `[positionId, version]` 唯一性、`WorkerLease.leaseKey` 唯一性，以及删除账户被外键限制拒绝。插入一条 `CashLedgerEntry`、`PaperAuditLog` 和 `PaperFill` 后，分别调用 Prisma `update` 与 `delete`，必须因 SQLite 触发器拒绝。
 
-- [ ] **Step 2: 运行模式测试并确认失败。**
+- [x] **Step 2: 运行模式测试并确认失败。**
 
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-schema.integration.test.ts`  
 Expected: FAIL，因为迁移、脚本和 Prisma 模型尚不存在。
 
-- [ ] **Step 3: 定义模型与迁移。**
+- [x] **Step 3: 定义模型与迁移。**
 
 所有代表现金、价格、成交额、成本、费用和盈亏的字段使用 Prisma `BigInt`；不为新模型添加 `Float` 账本字段。数量、序号、版本、ppm、bp 和状态相关字段使用 Prisma `Int` 或枚举。`PaperAccount` 存 `initialCashFen`、`availableCashFen`、`frozenCashFen`、`realizedPnlFen`、`cumulativeFeesFen`（全部为 `BigInt`）与 `accountVersion`（`Int`）。`PaperAccountSettingsVersion` 使用 `scopeKey`（`new-account-default` 或 `account:<id>`）和 `[scopeKey, version]` 唯一键，并新增唯一 `idempotencyKey`；默认范围保存 `initialCashForNewAccountsFen`（`BigInt`），账户范围保存费率与风险上限版本。`WorkerLease` 独立于 `PaperWorkerState`，因为租约的 10 秒心跳/45 秒失效生命周期与按账户和股票维护的分钟游标不同。
 
@@ -546,7 +546,7 @@ npm run prisma:generate
 
 `scripts/run-paper-account-db-tests.mjs` 必须接收一个或多个明确的测试文件路径或 glob；未传参数时立即以 `PAPER_ACCOUNT_TEST_PATTERN_REQUIRED` 失败。脚本以 `fs.mkdtemp` 在 `os.tmpdir()` 创建目录，以 `pathToFileURL` 生成临时 SQLite `DATABASE_URL`，使用 Windows 安全的 `spawn(command, args, { shell: false })` 参数数组执行 `npx prisma migrate deploy`，再以 `spawn("npx", ["vitest", "run", ...patterns], { shell: false })` 将原始 patterns 逐项传给 Vitest。无论迁移或测试成功、失败或抛错，均在 `finally` 删除临时目录；不得读取、写入、重置 `.env` 的开发数据库，也不得执行 `prisma migrate reset`。
 
-- [ ] **Step 4: 运行模式与 Prisma 生成验证。**
+- [x] **Step 4: 运行模式与 Prisma 生成验证。**
 
 Run: `npm run prisma:generate`  
 Expected: PASS，生成的 Prisma Client 包含新模型，旧 `PaperTrade` 仍存在。
@@ -554,7 +554,7 @@ Expected: PASS，生成的 Prisma Client 包含新模型，旧 `PaperTrade` 仍�
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-schema.integration.test.ts`  
 Expected: PASS，临时数据库应用迁移后所有唯一键、索引与外键断言成立。
 
-- [ ] **Step 5: 提交模式与测试隔离工具。**
+- [x] **Step 5: 提交模式与测试隔离工具。**
 
 ```bash
 git add prisma/schema.prisma prisma/migrations/20260803_add_paper_account_ledger_foundation/migration.sql scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-schema.integration.test.ts
@@ -608,7 +608,7 @@ export type PaperAccountTransactionContext = {
 - `PaperWorkerStateRepository`：`findByAccountAndCode(accountId: string, code: string): Promise<PaperWorkerStateRecord | null>`、`listByAccount(accountId: string): Promise<PaperWorkerStateRecord[]>`、`upsertWithVersion(input: UpsertPaperWorkerStateInput): Promise<PaperWorkerStateRecord>`；本阶段只定义持久化接口，不实现 30 秒循环或自动退出。
 - `WorkerLeaseRepository`：`findByKey(leaseKey: string): Promise<WorkerLeaseRecord | null>`、`acquire(input: AcquireWorkerLeaseInput): Promise<WorkerLeaseRecord>`、`heartbeat(input: { leaseKey: string; workerId: string; expectedVersion: number; heartbeatAt: string; expiresAt: string }): Promise<WorkerLeaseRecord>`、`release(input: { leaseKey: string; workerId: string; expectedVersion: number }): Promise<WorkerLeaseRecord>`；本阶段只建立数据库与 Repository 边界，不实现 Worker。
 
-- [ ] **Step 1: 写入失败的共享事务测试。**
+- [x] **Step 1: 写入失败的共享事务测试。**
 
 ```ts
 it("binds account, ledger, settings, and audit repositories to one transaction context", async () => {
@@ -657,25 +657,25 @@ it("binds account, ledger, settings, and audit repositories to one transaction c
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-unit-of-work.test.ts`  
 Expected: FAIL，因为 Unit of Work 与 Repository 接口尚不存在。
 
-- [ ] **Step 3: 实现 Repository 边界。**
+- [x] **Step 3: 实现 Repository 边界。**
 
 `PaperAccountRepository` 只处理账户状态与乐观版本；`PaperAccountSettingsRepository` 只处理不可覆盖的设置版本；`PaperPositionRepository` 只处理汇总持仓；`PaperLotRepository` 只处理买入批次；`PaperOrderRepository` 只处理可变订单状态；`PaperFillRepository` 只处理不可变成交；`CashLedgerRepository` 只处理不可变资金流水；`ExitRuleRepository` 只处理退出规则版本；`PaperAuditRepository` 只处理不可变审计日志；`PaperWorkerStateRepository` 只处理账户/股票游标与监控状态；`WorkerLeaseRepository` 只处理租约与心跳。不可变表的 Repository 不提供 `update` 或 `delete`，Task 5 的 SQLite 触发器继续提供第二层保护。
 
 领域服务只依赖 `PaperAccountUnitOfWork` 和 Repository 接口，不导入全局 Prisma Client。`paper-account-prisma-client.ts` 是基础设施组合根，使用与现有 `src/server/trading-memory/prisma-client.ts` 相同的全局单例模式；`prisma-paper-account-unit-of-work.ts` 在一次 `prisma.$transaction` 内创建全部 Repository，禁止 Repository 自行开启或提交事务。
 
-- [ ] **Step 4: 运行事务与接口测试。**
+- [x] **Step 4: 运行事务与接口测试。**
 
 补充测试：乐观更新的 `expectedAccountVersion` 不匹配时返回 `ACCOUNT_VERSION_CONFLICT`；重复幂等键返回既有实体或固定冲突错误；Repository 无法脱离事务上下文执行写入。
 
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-unit-of-work.test.ts`  
 Expected: PASS，事务抛错后数据库零写入，成功事务所有写入一起可见。
 
-- [ ] **Step 5: 提交事务基础设施。**
+- [x] **Step 5: 提交事务基础设施。**
 
 ```bash
 git add src/server/paper-account/paper-account-repositories.ts src/server/paper-account/prisma-paper-account-repositories.ts src/server/paper-account/paper-account-unit-of-work.ts src/server/paper-account/prisma-paper-account-unit-of-work.ts src/server/paper-account/paper-account-prisma-client.ts src/server/paper-account/paper-account-unit-of-work.test.ts
@@ -698,7 +698,7 @@ git commit -m "feat: add paper account transaction repositories"
 - 输入类型：`{ accountKey: string; actorId: string; occurredAt: string; idempotencyKey: string }`。
 - 返回类型：`{ accountId: string; created: boolean; initialCashFen: MoneyFen; settingsVersion: number }`。
 
-- [ ] **Step 1: 写入失败的初始化测试。**
+- [x] **Step 1: 写入失败的初始化测试。**
 
 ```ts
 it("creates account, opening ledger, settings version, and audit record atomically", async () => {
@@ -712,16 +712,16 @@ it("creates account, opening ledger, settings version, and audit record atomical
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/server/paper-account/paper-account-initializer.test.ts`  
 Expected: FAIL，因为初始化服务尚不存在。
 
-- [ ] **Step 3: 实现初始化服务。**
+- [x] **Step 3: 实现初始化服务。**
 
 服务在一个 Unit of Work 中先按 `accountKey` 查找；存在时返回既有账户并返回 `created: false`。不存在时读取 `new-account-default` 的最新设置版本；若默认模板不存在，创建版本 1，精确写入 10,000,000 分、250 ppm、500 分最低佣金、500 ppm 印花税、10 ppm 过户费、3,000/8,000/200 bp 风控设置。随后创建账户、账户范围设置版本 1、贷方 `initial_funding` 流水和 `account_initialized` 审计日志。任何一步异常都让 Unit of Work 回滚。
 
-- [ ] **Step 4: 运行单元与临时数据库集成测试。**
+- [x] **Step 4: 运行单元与临时数据库集成测试。**
 
 集成测试必须断言重复调用只得到一个账户、一条初始流水和一条初始化审计日志；注入抛错的审计 Repository 后，账户、设置和流水全部不存在；初始现金只来自新账户默认设置而非硬编码覆盖已有账户。
 
@@ -731,7 +731,7 @@ Expected: PASS。
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-initializer.integration.test.ts`  
 Expected: PASS，重复初始化保持幂等，失败初始化完全回滚。
 
-- [ ] **Step 5: 提交初始化服务。**
+- [x] **Step 5: 提交初始化服务。**
 
 ```bash
 git add src/server/paper-account/paper-account-initializer.ts src/server/paper-account/paper-account-initializer.test.ts src/server/paper-account/paper-account-initializer.integration.test.ts
@@ -755,7 +755,7 @@ git commit -m "feat: initialize default paper account ledger"
 - `AdjustPaperAccountCashInput`: `{ accountId: string; direction: "credit" | "debit"; amountFen: MoneyFen; reason: string; actorId: string; occurredAt: string; idempotencyKey: string; expectedAccountVersion: number }`。
 - `CashAdjustmentResult`: `{ ledgerEntryId: string; availableCashFen: MoneyFen; accountVersion: number; created: boolean }`。
 
-- [ ] **Step 1: 写入失败的设置与资金调整测试。**
+- [x] **Step 1: 写入失败的设置与资金调整测试。**
 
 ```ts
 it("changes the default initial cash only for accounts created afterwards", async () => {
@@ -798,23 +798,23 @@ it("adjusts an existing account only by an immutable ledger entry", async () => 
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/server/paper-account/paper-account-settings-service.test.ts src/server/paper-account/paper-account-cash-adjustment-service.test.ts`  
 Expected: FAIL，因为设置和资金调整服务尚不存在。
 
-- [ ] **Step 3: 实现版本化设置和资金调整服务。**
+- [x] **Step 3: 实现版本化设置和资金调整服务。**
 
 `updateNewAccountDefaults` 创建 `new-account-default` 的下一个版本而不更新旧行。`createAccountSettingsVersion` 只接受费率与风险上限，拒绝任何既有账户初始资金字段。`adjustPaperAccountCash` 在一个 Unit of Work 中校验 `expectedAccountVersion`、借方余额、幂等键和非空原因；追加不可变流水、更新账户可用现金缓存与版本、追加审计日志。重复 `idempotencyKey` 返回第一次结果，不能重复增加余额。
 
-- [ ] **Step 4: 运行完整设置与资金调整测试。**
+- [x] **Step 4: 运行完整设置与资金调整测试。**
 
 覆盖默认佣金/税费/仓位参数、历史设置版本不可覆盖、已有账户初始资金不可改、贷方与借方流水、借方余额不足拒绝、审计字段齐全、重复幂等键、账户版本冲突和账本余额与缓存一致。
 
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-settings.integration.test.ts`  
 Expected: PASS，临时数据库中设置版本追加而非覆盖，资金调整只产生追加流水。
 
-- [ ] **Step 5: 提交设置与资金调整服务。**
+- [x] **Step 5: 提交设置与资金调整服务。**
 
 ```bash
 git add src/server/paper-account/paper-account-settings-service.ts src/server/paper-account/paper-account-cash-adjustment-service.ts src/server/paper-account/paper-account-settings-service.test.ts src/server/paper-account/paper-account-cash-adjustment-service.test.ts src/server/paper-account/paper-account-settings.integration.test.ts
@@ -841,7 +841,7 @@ git commit -m "feat: add paper account settings and cash ledger"
 - `getPaperAccountSnapshot(input: { accountId: string; quoteReader: PaperAccountQuoteReader }): Promise<PaperAccountSnapshot>`；`serializePaperAccountSnapshot(snapshot: PaperAccountSnapshot): PaperAccountSnapshotDto` 将每个 `bigint` 字段转换为十进制字符串，DTO 返回 `{ availableCashFen: string; frozenCashFen: string; positionMarketValueFen: string | null; totalAssetsFen: string | null; realizedPnlFen: string; cumulativeFeesFen: string; availableCash: string; frozenCash: string; positionMarketValue: string | null; totalAssets: string | null }`。JSON 示例只包含字符串金额，绝不直接包含 `bigint`。
 - `checkPaperAccountIntegrity(accountId): Promise<{ valid: boolean; issues: string[]; ledgerCashFen: MoneyFen; cachedCashFen: MoneyFen }>`。
 
-- [ ] **Step 1: 写入失败的快照和一致性测试。**
+- [x] **Step 1: 写入失败的快照和一致性测试。**
 
 ```ts
 it("separates ledger-derived cash from quote-derived market value", async () => {
@@ -865,23 +865,23 @@ it("serializes bigint monetary fields as decimal strings before JSON", () => {
 });
 ```
 
-- [ ] **Step 2: 运行目标测试并确认失败。**
+- [x] **Step 2: 运行目标测试并确认失败。**
 
 Run: `npx vitest run src/server/paper-account/paper-account-snapshot-service.test.ts src/server/paper-account/paper-account-integrity-service.test.ts`  
 Expected: FAIL，因为快照、报价端口和一致性服务尚不存在。
 
-- [ ] **Step 3: 实现只读快照和一致性服务。**
+- [x] **Step 3: 实现只读快照和一致性服务。**
 
 快照服务从账本/账户读取可用现金、冻结现金、已实现盈亏、累计费用和设置版本；所有金额保持 `bigint`。只从注入的 `PaperAccountQuoteReader` 计算持仓市值与总资产。报价缺失、延迟或不可用时返回 `positionMarketValueFen: null`、`totalAssetsFen: null`、`quoteStatus: "unavailable"`，不调用真实行情，也不使用旧价代替。`serializePaperAccountSnapshot` 在 JSON 边界将每个 `bigint` 转为十进制字符串。完整性服务重新汇总所有借贷流水，比较账户缓存余额、冻结现金、累计费用、持仓数量与批次剩余数量，并只报告问题，绝不自动修复数据。
 
-- [ ] **Step 4: 运行完整快照与一致性测试。**
+- [x] **Step 4: 运行完整快照与一致性测试。**
 
 覆盖无行情、fresh 行情、延迟行情、冻结现金、持仓市值、总资产、已实现盈亏、累计费用、设置版本、流水/缓存一致、资金不一致、批次/持仓数量不一致和审计日志保持不变。
 
 Run: `node scripts/run-paper-account-db-tests.mjs src/server/paper-account/paper-account-integrity.integration.test.ts`  
 Expected: PASS，所有检查在临时数据库上执行，开发数据库无写入。
 
-- [ ] **Step 5: 提交快照与一致性服务。**
+- [x] **Step 5: 提交快照与一致性服务。**
 
 ```bash
 git add src/server/paper-account/paper-account-quote-port.ts src/server/paper-account/paper-account-snapshot-service.ts src/server/paper-account/paper-account-integrity-service.ts src/server/paper-account/paper-account-snapshot-service.test.ts src/server/paper-account/paper-account-integrity-service.test.ts src/server/paper-account/paper-account-integrity.integration.test.ts
@@ -900,7 +900,7 @@ git commit -m "feat: add paper account snapshots and integrity checks"
 - Consumes: Tasks 1 至 9 创建的纯函数、Prisma 模型、临时数据库脚本、Repository、初始化、设置、快照和一致性检查服务。
 - Produces: 已核对的计划记录和可提交的稳定基线；不产生页面、MCP、Worker、订单确认或券商执行接口。
 
-- [ ] **Step 1: 先运行专属测试并记录失败原因。**
+- [x] **Step 1: 先运行专属测试并记录失败原因。**
 
 Run: `node scripts/run-paper-account-db-tests.mjs "src/server/paper-account/**/*.integration.test.ts"`
 Expected before Tasks 1 至 9 全部完成: FAIL，输出缺失模块、缺失迁移或未实现接口的具体路径；完成前序任务后该命令必须 PASS。
@@ -917,20 +917,70 @@ npm run build
 
 Expected: 所有命令 PASS；`npm test` 包含旧 PaperTrade 测试、行情、策略、分钟线和回测回归测试；`npm run build` 不修改运行时数据。
 
-- [ ] **Step 3: 核对迁移和测试数据库隔离。**
+- [x] **Step 3: 核对迁移和测试数据库隔离。**
 
 运行 `node scripts/run-paper-account-db-tests.mjs "src/server/paper-account/**/*.integration.test.ts"`，确认日志中的数据库路径位于系统临时目录，脚本结束后该目录被删除；确认 `.env` 中的 `DATABASE_URL` 文件时间戳和内容未改变；确认未运行 `prisma migrate reset`。
 
-- [ ] **Step 4: 核对范围与计划完成状态。**
+- [x] **Step 4: 核对范围与计划完成状态。**
 
 检查 `prisma/schema.prisma` 中旧 `PaperTrade` 模型未变更，检查新增代码不包含页面路由、API 路由、MCP 服务器、Worker 定时器、券商 Provider 或真实行情调用。将本计划所有已通过步骤的复选框标为 `- [x]`，并在本任务末尾写入实际测试命令和通过日期。
 
-- [ ] **Step 5: 提交最终验证记录。**
+- [x] **Step 5: 提交最终验证记录。**
 
 ```bash
 git add docs/superpowers/plans/2026-08-03-paper-account-ledger-foundation.md
 git commit -m "docs: record paper account ledger verification"
 ```
+#### 实际验证结果（2026-08-05）
+
+**最终状态：** `DONE_WITH_CONCERNS`
+
+**提交前基线：**
+
+- 分支：`codex/paper-trading-closed-loop`
+- 验证基线HEAD：`b75721a20cc7733a39515e04c2f2ce147f914bbb`
+- 工作区仅保留三个既有未跟踪脚本，零已跟踪代码修改。
+
+**专属集成验证：**
+
+- 正序运行4个Paper Account集成测试文件：`38/38`通过。
+- 反序运行同一组文件：`38/38`通过。
+- 测试SQLite文件位于系统临时目录，结束后临时目录已删除。
+- 测试进程使用独立`DATABASE_URL`，结束后环境变量已恢复。
+- `.env`的内容哈希和修改时间均未改变。
+- 未执行`prisma migrate reset`或`prisma migrate dev`。
+
+**全量质量命令：**
+
+- `npm run prisma:generate`：退出码`0`，Prisma `6.19.3`。
+- `npx tsc --noEmit`：退出码`0`，`0 errors`。
+- `npm run lint`：退出码`1`，`1 error / 22 warnings`。
+- `npm test`：退出码`1`，`105 files / 961 tests / 958 passed / 3 failed`。
+- `npm run build`：退出码`0`，编译、路由分析和静态页面生成成功。
+
+**已知范围外基线问题：**
+
+- Lint：`src/components/layout/sidebar.tsx:26:21` 的`react-hooks/set-state-in-effect`错误；其余22项warning均为既有问题。
+- 测试：`src/app/stocks/[code]/error.test.tsx` 因App Router未挂载失败。
+- 测试：`.worktrees/tencent-minute-kline-task1/src/server/market-data/capability-matrix.test.ts` 因既有数据源期望不一致失败。
+- 测试：`.worktrees/tencent-minute-kline-task1/src/server/watchlist-storage/dynamic-watchlist-repository.test.ts` 因既有Prisma测试初始化问题失败。
+- Task 1至Task 9新增文件为`0 lint errors / 0 lint warnings`，其新增测试全部通过。
+
+**兼容与范围：**
+
+- 旧`PaperTrade`模型与Task 1父提交中的模型块逐字符一致。
+- 新迁移未对旧`PaperTrade`执行删除、更新或结构修改。
+- 新生产代码不写入旧`PaperTrade`。
+- 本阶段未增加页面、API路由、MCP、Worker、券商Provider或真实行情调用。
+- 构建前后`.env`与`prisma`目录中的数据库文件均未改变。
+- 构建未产生任何已跟踪文件修改。
+
+**复选框说明：**
+
+- Task 1至Task 9共45个Step均已完成。
+- Task 10的Step 1、Step 3、Step 4和Step 5已完成。
+- Task 10 Step 2保持未勾选，因为全量Lint和全量测试仍存在上述已知范围外基线失败。
+- 总计：`49/50`个Step完成。
 
 ## 计划自检映射
 
