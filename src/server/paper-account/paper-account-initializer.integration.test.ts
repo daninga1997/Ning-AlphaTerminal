@@ -329,9 +329,20 @@ describe.sequential("PaperAccountInitializer (integration)", () => {
 
     const rollbackIdempotencyKey = uniqueKey("rollback");
 
+    const targetAccountSettingsIdempotencyKey =
+      `${rollbackIdempotencyKey}:account-settings:v1`;
+
+    const targetInitialCashIdempotencyKey =
+      `${rollbackIdempotencyKey}:initial-cash`;
+
+    const conflictingAuditIdempotencyKey =
+      `${rollbackIdempotencyKey}:account-initialized`;
+
+    let preexistingConflictingAuditId = "";
+
     // Pre-create a conflicting audit record on the fixture account
     await unitOfWork.run(async (context) => {
-      await context.audit.append({
+      const preexistingAudit = await context.audit.append({
         accountId: fixtureAccountId,
         sequence: 1,
         action: "account_initialized",
@@ -339,23 +350,12 @@ describe.sequential("PaperAccountInitializer (integration)", () => {
         entityType: "PaperAccount",
         entityId: fixtureAccountId,
         payloadJson: JSON.stringify({}),
-        idempotencyKey: `${rollbackIdempotencyKey}:account-initialized`,
+        idempotencyKey: conflictingAuditIdempotencyKey,
         occurredAt,
       });
-    });
 
-    // Record pre-init state
-    const targetAccountsBefore = await prisma.paperAccount.count({
-      where: { accountKey: targetAccountKey },
+      preexistingConflictingAuditId = preexistingAudit.id;
     });
-    const templatesBefore =
-      await prisma.paperAccountSettingsVersion.count({
-        where: { scopeKey: "new-account-default" },
-      });
-    const allSettingsBefore =
-      await prisma.paperAccountSettingsVersion.count();
-    const allLedgerBefore = await prisma.cashLedgerEntry.count();
-    const allAuditBefore = await prisma.paperAuditLog.count();
 
     // Expect failure from audit idempotency conflict
     await expect(
@@ -367,27 +367,41 @@ describe.sequential("PaperAccountInitializer (integration)", () => {
       }),
     ).rejects.toThrow();
 
-    // Verify full rollback
-    const targetAccountsAfter = await prisma.paperAccount.count({
+    // Verify target account was not created
+    const rolledBackAccount = await prisma.paperAccount.findUnique({
       where: { accountKey: targetAccountKey },
     });
-    expect(targetAccountsAfter).toBe(targetAccountsBefore);
 
-    const templatesAfter =
-      await prisma.paperAccountSettingsVersion.count({
-        where: { scopeKey: "new-account-default" },
+    expect(rolledBackAccount).toBeNull();
+
+    // Verify target account settings were not created
+    const rolledBackAccountSettings =
+      await prisma.paperAccountSettingsVersion.findFirst({
+        where: { idempotencyKey: targetAccountSettingsIdempotencyKey },
       });
-    expect(templatesAfter).toBe(templatesBefore);
 
-    const allSettingsAfter =
-      await prisma.paperAccountSettingsVersion.count();
-    expect(allSettingsAfter).toBe(allSettingsBefore);
+    expect(rolledBackAccountSettings).toBeNull();
 
-    const allLedgerAfter = await prisma.cashLedgerEntry.count();
-    expect(allLedgerAfter).toBe(allLedgerBefore);
+    // Verify target initial cash ledger was not created
+    const rolledBackInitialCashLedger =
+      await prisma.cashLedgerEntry.findFirst({
+        where: { idempotencyKey: targetInitialCashIdempotencyKey },
+      });
 
-    const allAuditAfter = await prisma.paperAuditLog.count();
-    expect(allAuditAfter).toBe(allAuditBefore);
+    expect(rolledBackInitialCashLedger).toBeNull();
+
+    // Verify pre-existing conflicting audit was preserved
+    const persistedConflictingAudit =
+      await prisma.paperAuditLog.findFirst({
+        where: { idempotencyKey: conflictingAuditIdempotencyKey },
+      });
+
+    expect(persistedConflictingAudit).not.toBeNull();
+    expect(persistedConflictingAudit!.id).toBe(preexistingConflictingAuditId);
+    expect(persistedConflictingAudit!.accountId).toBe(fixtureAccountId);
+    expect(persistedConflictingAudit!.idempotencyKey).toBe(
+      conflictingAuditIdempotencyKey,
+    );
   });
 
   // 6 ── Uses latest default template version ─────────────────────────────
