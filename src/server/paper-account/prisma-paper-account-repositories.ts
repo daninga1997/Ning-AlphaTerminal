@@ -927,7 +927,10 @@ export function createPrismaPaperAccountRepositories(
       },
       async acquire(input) {
         assertTransactionScopeActive(scope);
-        try {
+        const existing = await client.workerLease.findUnique({
+          where: { leaseKey: input.leaseKey },
+        });
+        if (existing === null) {
           const created = await client.workerLease.create({
             data: {
               leaseKey: input.leaseKey,
@@ -939,12 +942,34 @@ export function createPrismaPaperAccountRepositories(
             },
           });
           return mapWorkerLease(created);
-        } catch (error) {
-          if (isUniqueConflict(error)) {
-            throw new Error("WORKER_LEASE_VERSION_CONFLICT");
-          }
-          throw error;
         }
+        const acquiredAt = parseIsoDateTime(input.acquiredAt);
+        if (existing.expiresAt > acquiredAt) {
+          throw new Error("WORKER_LEASE_VERSION_CONFLICT");
+        }
+        const result = await client.workerLease.updateMany({
+          where: {
+            leaseKey: input.leaseKey,
+            version: existing.version,
+          },
+          data: {
+            ownerId: input.ownerId,
+            acquiredAt,
+            heartbeatAt: parseIsoDateTime(input.heartbeatAt),
+            expiresAt: parseIsoDateTime(input.expiresAt),
+            version: { increment: 1 },
+          },
+        });
+        if (result.count !== 1) {
+          throw new Error("WORKER_LEASE_VERSION_CONFLICT");
+        }
+        const updated = await client.workerLease.findUnique({
+          where: { leaseKey: input.leaseKey },
+        });
+        if (updated === null) {
+          throw new Error("WORKER_LEASE_VERSION_CONFLICT");
+        }
+        return mapWorkerLease(updated);
       },
       async heartbeat(input) {
         assertTransactionScopeActive(scope);

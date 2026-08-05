@@ -914,6 +914,108 @@ describe("paper account transaction repositories", () => {
     await expect(prisma.workerLease.findUnique({ where: { leaseKey } })).resolves.not.toBeNull();
   });
 
+  it("reacquires a released worker lease with a new owner", async () => {
+    const leaseKey = uniqueKey("reacquire-lease");
+    const first = await unitOfWork.run((context) =>
+      context.leases.acquire({
+        leaseKey,
+        ownerId: "worker-a",
+        acquiredAt: iso(0),
+        heartbeatAt: iso(0),
+        expiresAt: iso(45),
+      }),
+    );
+    const releasedAt = iso(20);
+    const released = await unitOfWork.run((context) =>
+      context.leases.release({
+        leaseKey,
+        ownerId: "worker-a",
+        expectedVersion: first.version,
+        releasedAt,
+      }),
+    );
+    expect(released.id).toBe(first.id);
+    expect(released.ownerId).toBe("worker-a");
+    expect(released.heartbeatAt).toBe(releasedAt);
+    expect(released.expiresAt).toBe(releasedAt);
+    expect(released.version).toBe(first.version + 1);
+    const reacquired = await unitOfWork.run((context) =>
+      context.leases.acquire({
+        leaseKey,
+        ownerId: "worker-b",
+        acquiredAt: iso(21),
+        heartbeatAt: iso(21),
+        expiresAt: iso(66),
+      }),
+    );
+    expect(reacquired.id).toBe(first.id);
+    expect(reacquired.leaseKey).toBe(leaseKey);
+    expect(reacquired.ownerId).toBe("worker-b");
+    expect(reacquired.acquiredAt).toBe(iso(21));
+    expect(reacquired.heartbeatAt).toBe(iso(21));
+    expect(reacquired.expiresAt).toBe(iso(66));
+    expect(reacquired.version).toBe(released.version + 1);
+    await expect(
+      unitOfWork.run((context) =>
+        context.leases.heartbeat({
+          leaseKey,
+          ownerId: "worker-a",
+          expectedVersion: released.version,
+          heartbeatAt: iso(21),
+          expiresAt: iso(66),
+        }),
+      ),
+    ).rejects.toThrow("WORKER_LEASE_VERSION_CONFLICT");
+  });
+
+  it("allows takeover exactly when a worker lease expires", async () => {
+    const leaseKey = uniqueKey("expire-lease");
+    await unitOfWork.run((context) =>
+      context.leases.acquire({
+        leaseKey,
+        ownerId: "worker-a",
+        acquiredAt: iso(0),
+        heartbeatAt: iso(0),
+        expiresAt: iso(45),
+      }),
+    );
+    await expect(
+      unitOfWork.run((context) =>
+        context.leases.acquire({
+          leaseKey,
+          ownerId: "worker-b",
+          acquiredAt: iso(44),
+          heartbeatAt: iso(44),
+          expiresAt: iso(89),
+        }),
+      ),
+    ).rejects.toThrow("WORKER_LEASE_VERSION_CONFLICT");
+    const taken = await unitOfWork.run((context) =>
+      context.leases.acquire({
+        leaseKey,
+        ownerId: "worker-b",
+        acquiredAt: iso(45),
+        heartbeatAt: iso(45),
+        expiresAt: iso(90),
+      }),
+    );
+    expect(taken.ownerId).toBe("worker-b");
+    expect(taken.acquiredAt).toBe(iso(45));
+    expect(taken.heartbeatAt).toBe(iso(45));
+    expect(taken.expiresAt).toBe(iso(90));
+    expect(taken.leaseKey).toBe(leaseKey);
+    await expect(
+      unitOfWork.run((context) =>
+        context.leases.release({
+          leaseKey,
+          ownerId: "worker-a",
+          expectedVersion: 1,
+          releasedAt: iso(50),
+        }),
+      ),
+    ).rejects.toThrow("WORKER_LEASE_VERSION_CONFLICT");
+  });
+
   it("rejects non-canonical ISO date-time values", async () => {
     const account = await createAccount();
     for (const invalidDateTime of [
