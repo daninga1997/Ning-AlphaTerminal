@@ -58,7 +58,7 @@ function accountRecord(overrides: Partial<PaperAccountRecord> = {}): PaperAccoun
 }
 
 function ledgerEntry(overrides: Partial<CashLedgerEntryRecord> = {}): CashLedgerEntryRecord {
-  return { id: "ledger-1", accountId: "account-1", orderId: null, sequence: 1, direction: "credit", type: "cash_adjustment" as CashLedgerType, amountFen: BigInt("1000000"), balanceAfterFen: BigInt("11000000"), idempotencyKey: "adj-key", metadataJson: JSON.stringify({ reason: "test", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2 }), occurredAt: "2026-08-04T02:00:00.000Z", createdAt: "2026-08-04T02:00:00.100Z", ...overrides };
+  return { id: "ledger-1", accountId: "account-1", orderId: null, sequence: 1, direction: "credit", type: "cash_adjustment" as CashLedgerType, amountFen: BigInt("1000000"), balanceAfterFen: BigInt("11000000"), idempotencyKey: "adj-key", metadataJson: JSON.stringify({ reason: "test", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2, availableCashAfterFen: "11000000" }), occurredAt: "2026-08-04T02:00:00.000Z", createdAt: "2026-08-04T02:00:00.100Z", ...overrides };
 }
 
 function auditEntry(overrides: Partial<PaperAuditLogRecord> = {}): PaperAuditLogRecord {
@@ -189,13 +189,13 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
 
   it("returns existing result on idempotent hit", async () => {
     const existing = ledgerEntry({ id: "existing-ledger", balanceAfterFen: BigInt("12000000") });
-    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2 });
+    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2, availableCashAfterFen: "11000000" });
 
     const ctx = fullFakeContext({ ledger: { findByIdempotencyKey: vi.fn().mockResolvedValue(existing), listByAccount: unexpectedRepositoryCall, sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall } });
     const svc = createPaperAccountCashAdjustmentService(createFakeUnitOfWork(ctx));
     const result = await svc.adjustPaperAccountCash(validAdjustment());
 
-    expect(result).toEqual({ ledgerEntryId: "existing-ledger", availableCashFen: BigInt("12000000"), accountVersion: 2, created: false });
+    expect(result).toEqual({ ledgerEntryId: "existing-ledger", availableCashFen: BigInt("11000000"), accountVersion: 2, created: false });
   });
 
   // 5 ── Idempotent conflict ─────────────────────────────────────────────
@@ -209,7 +209,7 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
 
   it("rejects idempotent hit with wrong amountFen", async () => {
     const existing = ledgerEntry();
-    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "999999", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2 });
+    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "999999", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, accountVersionAfter: 2, availableCashAfterFen: "11000000" });
     const ctx = fullFakeContext({ ledger: { findByIdempotencyKey: vi.fn().mockResolvedValue(existing), listByAccount: unexpectedRepositoryCall, sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall } });
     const svc = createPaperAccountCashAdjustmentService(createFakeUnitOfWork(ctx));
     await expect(svc.adjustPaperAccountCash(validAdjustment())).rejects.toThrow("PAPER_ACCOUNT_IDEMPOTENCY_CONFLICT");
@@ -226,7 +226,7 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
 
   it("rejects metadata missing accountVersionAfter", async () => {
     const existing = ledgerEntry();
-    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1 });
+    existing.metadataJson = JSON.stringify({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 1, availableCashAfterFen: "11000000" });
     const ctx = fullFakeContext({ ledger: { findByIdempotencyKey: vi.fn().mockResolvedValue(existing), listByAccount: unexpectedRepositoryCall, sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall } });
     const svc = createPaperAccountCashAdjustmentService(createFakeUnitOfWork(ctx));
     await expect(svc.adjustPaperAccountCash(validAdjustment())).rejects.toThrow("PAPER_ACCOUNT_CASH_ADJUSTMENT_METADATA_INVALID");
@@ -272,7 +272,8 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
   it("completes credit adjustment with exact contract", async () => {
     const acct = accountRecord({ availableCashFen: BigInt("10000000"), frozenCashFen: BigInt("200000"), accountVersion: 3 });
     const updAccount = accountRecord({ id: "account-1", availableCashFen: BigInt("11000000"), frozenCashFen: BigInt("200000"), accountVersion: 4 });
-    const led = ledgerEntry({ id: "new-ledger", balanceAfterFen: BigInt("11000000"), sequence: 5 });
+    const totalCashFen = updAccount.availableCashFen + updAccount.frozenCashFen;
+    const led = ledgerEntry({ id: "new-ledger", balanceAfterFen: totalCashFen, sequence: 5 });
     const aud = auditEntry({ id: "new-audit", sequence: 8 });
 
     const updateCash = vi.fn().mockResolvedValue(updAccount);
@@ -301,11 +302,11 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
     expect(lc.direction).toBe("credit");
     expect(lc.type).toBe("cash_adjustment");
     expect(lc.amountFen).toBe(BigInt("1000000"));
-    expect(lc.balanceAfterFen).toBe(BigInt("11000000"));
+    expect(lc.balanceAfterFen).toBe(totalCashFen);
     expect(lc.orderId).toBeNull();
 
     const m = JSON.parse(lc.metadataJson!);
-    expect(m).toEqual({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 3, accountVersionAfter: 4 });
+    expect(m).toEqual({ reason: "bonus", actorId: "operator", direction: "credit", amountFen: "1000000", occurredAt: "2026-08-04T02:00:00.000Z", accountVersionBefore: 3, accountVersionAfter: 4, availableCashAfterFen: "11000000" });
 
     const ac = auditAppend.mock.calls[0][0] as PaperAuditLogInput;
     expect(ac.sequence).toBe(8);
@@ -314,6 +315,39 @@ describe("PaperAccountCashAdjustmentService (unit)", () => {
     expect(ac.entityId).toBe("new-ledger");
 
     expect(result).toEqual({ ledgerEntryId: "new-ledger", availableCashFen: BigInt("11000000"), accountVersion: 4, created: true });
+  });
+
+  it("returns available cash rather than total cash on idempotent replay", async () => {
+    const existingLedger = ledgerEntry({
+      id: "existing-ledger-1",
+      accountId: "account-1",
+      type: "cash_adjustment" as CashLedgerType,
+      direction: "credit",
+      amountFen: BigInt("1000000"),
+      balanceAfterFen: BigInt("11200000"),
+      idempotencyKey: "replay-key",
+      metadataJson: JSON.stringify({
+        reason: "bonus",
+        actorId: "operator",
+        direction: "credit",
+        amountFen: "1000000",
+        occurredAt: "2026-08-04T02:00:00.000Z",
+        accountVersionBefore: 3,
+        accountVersionAfter: 4,
+        availableCashAfterFen: "11000000",
+      }),
+    });
+    let runCount = 0;
+    const ctx = fullFakeContext({
+      ledger: { findByIdempotencyKey: vi.fn().mockResolvedValue(existingLedger), listByAccount: unexpectedRepositoryCall, sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall },
+    });
+    const svc = createPaperAccountCashAdjustmentService(createFakeUnitOfWork(ctx, () => { runCount += 1; }));
+    const result = await svc.adjustPaperAccountCash(validAdjustment({
+      amountFen: BigInt("1000000"), expectedAccountVersion: 3, idempotencyKey: "replay-key",
+    }));
+    expect(runCount).toBe(1);
+    expect(result).toEqual({ ledgerEntryId: "existing-ledger-1", availableCashFen: BigInt("11000000"), accountVersion: 4, created: false });
+    expect(result.availableCashFen).not.toBe(BigInt("11200000"));
   });
 
   // 11 ── Debit success ──────────────────────────────────────────────────

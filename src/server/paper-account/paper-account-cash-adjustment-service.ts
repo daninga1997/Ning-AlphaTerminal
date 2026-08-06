@@ -1,5 +1,6 @@
 import type { CashLedgerDirection, CashLedgerType } from "@prisma/client";
 import type { MoneyFen } from "@/lib/paper-account/paper-account-types";
+import { assertSqliteInt64, parseFen } from "../../lib/paper-account/money";
 import type { CashLedgerEntryRecord } from "./paper-account-repositories";
 import type { PaperAccountUnitOfWork } from "./paper-account-unit-of-work";
 
@@ -45,6 +46,7 @@ type CashAdjustmentMetadata = {
   occurredAt: string;
   accountVersionBefore: number;
   accountVersionAfter: number;
+  availableCashAfterFen: MoneyFen;
 };
 
 // ── Private helpers ────────────────────────────────────────────────────────
@@ -102,8 +104,9 @@ function parseCashAdjustmentMetadata(
   const occurredAt = parsed.occurredAt;
   const accountVersionBefore = parsed.accountVersionBefore;
   const accountVersionAfter = parsed.accountVersionAfter;
+  const availableCashAfterFen = parsed.availableCashAfterFen;
 
-  if (!isString(reason) || !isString(actorId) || !isString(amountFen) || !isString(occurredAt)) {
+  if (!isString(reason) || !isString(actorId) || !isString(amountFen) || !isString(occurredAt) || !isString(availableCashAfterFen)) {
     throw new Error("PAPER_ACCOUNT_CASH_ADJUSTMENT_METADATA_INVALID");
   }
 
@@ -127,6 +130,13 @@ function parseCashAdjustmentMetadata(
     throw new Error("PAPER_ACCOUNT_CASH_ADJUSTMENT_METADATA_INVALID");
   }
 
+  let parsedAvailableCashAfterFen: MoneyFen;
+  try {
+    parsedAvailableCashAfterFen = parseFen(availableCashAfterFen as string);
+  } catch {
+    throw new Error("PAPER_ACCOUNT_CASH_ADJUSTMENT_METADATA_INVALID");
+  }
+
   return {
     reason,
     actorId,
@@ -135,6 +145,7 @@ function parseCashAdjustmentMetadata(
     occurredAt,
     accountVersionBefore,
     accountVersionAfter,
+    availableCashAfterFen: parsedAvailableCashAfterFen,
   };
 }
 
@@ -208,7 +219,7 @@ export function createPaperAccountCashAdjustmentService(
 
           return {
             ledgerEntryId: existingLedger.id,
-            availableCashFen: existingLedger.balanceAfterFen,
+            availableCashFen: metadata.availableCashAfterFen,
             accountVersion: metadata.accountVersionAfter,
             created: false,
           };
@@ -225,15 +236,18 @@ export function createPaperAccountCashAdjustmentService(
           throw new Error("ACCOUNT_VERSION_CONFLICT");
         }
 
-        // Calculate new balance
-        const balanceAfterFen =
+        // Calculate new available cash
+        const rawAvailableCashAfterFen =
           input.direction === "credit"
             ? account.availableCashFen + input.amountFen
             : account.availableCashFen - input.amountFen;
 
-        if (balanceAfterFen < BigInt("0")) {
+        if (rawAvailableCashAfterFen < BigInt("0")) {
           throw new Error("PAPER_ACCOUNT_INSUFFICIENT_CASH");
         }
+
+        const availableCashAfterFen = assertSqliteInt64(rawAvailableCashAfterFen);
+        const totalCashAfterFen = assertSqliteInt64(availableCashAfterFen + account.frozenCashFen);
 
         // Compute sequence numbers
         const [ledgerEntries, auditEntries] = await Promise.all([
@@ -256,7 +270,7 @@ export function createPaperAccountCashAdjustmentService(
         // Update account cash
         const updatedAccount = await context.accounts.updateCash({
           accountId: account.id,
-          availableCashFen: balanceAfterFen,
+          availableCashFen: availableCashAfterFen,
           frozenCashFen: account.frozenCashFen,
           expectedAccountVersion: input.expectedAccountVersion,
         });
@@ -274,6 +288,7 @@ export function createPaperAccountCashAdjustmentService(
           occurredAt: input.occurredAt,
           accountVersionBefore: input.expectedAccountVersion,
           accountVersionAfter: updatedAccount.accountVersion,
+          availableCashAfterFen: availableCashAfterFen.toString(),
         });
 
         const ledgerEntry = await context.ledger.append({
@@ -283,7 +298,7 @@ export function createPaperAccountCashAdjustmentService(
           direction: (input.direction === "credit" ? "credit" : "debit") as CashLedgerDirection,
           type: "cash_adjustment" as CashLedgerType,
           amountFen: input.amountFen,
-          balanceAfterFen,
+          balanceAfterFen: totalCashAfterFen,
           idempotencyKey: input.idempotencyKey,
           metadataJson,
           occurredAt: input.occurredAt,
@@ -295,7 +310,7 @@ export function createPaperAccountCashAdjustmentService(
           direction: input.direction,
           amountFen: input.amountFen.toString(),
           balanceBeforeFen: account.availableCashFen.toString(),
-          balanceAfterFen: balanceAfterFen.toString(),
+          balanceAfterFen: availableCashAfterFen.toString(),
           accountVersionBefore: input.expectedAccountVersion,
           accountVersionAfter: updatedAccount.accountVersion,
           ledgerEntryId: ledgerEntry.id,
