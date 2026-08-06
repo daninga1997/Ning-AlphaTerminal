@@ -314,6 +314,37 @@ describe.sequential("PaperAccountIntegrity integration", () => {
     expect(auditsAfter.length).toBe(auditsBefore.length);
   });
 
+  it("reports a corrupted negative ledger balance without modifying data", async () => {
+    const accountId = await createFixtureAccount();
+
+    // Simulate historical database corruption via raw SQL
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO CashLedgerEntry (id, accountId, sequence, direction, type, amountFen, balanceAfterFen, idempotencyKey, metadataJson, occurredAt, createdAt) VALUES (?, ?, 1, 'debit', 'cash_adjustment', 1, -1, ?, '{}', ?, ?)`,
+      uniqueKey("corrupt-ledger"), accountId, uniqueKey("corrupt-idem"), new Date(occurredAt), new Date(),
+    );
+
+    const accountBefore = await prisma.paperAccount.findUnique({ where: { id: accountId } });
+    const ledgersBefore = await prisma.cashLedgerEntry.findMany({ where: { accountId } });
+    const auditsBefore = await prisma.paperAuditLog.count({ where: { accountId } });
+
+    const result = await integrityService.checkPaperAccountIntegrity(accountId);
+
+    expect(result.valid).toBe(false);
+    expect(result.ledgerCashFen).toBe(BigInt("-1"));
+    expect(result.cachedCashFen).toBe(BigInt("10000000"));
+    expect(result.issues).toContain("PAPER_ACCOUNT_LEDGER_BALANCE_INVALID");
+    expect(result.issues).toContain("CASH_CACHE_MISMATCH");
+    expect(result.issues).not.toContain("PAPER_ACCOUNT_LEDGER_BALANCE_MISMATCH");
+
+    // Read-only: nothing changed
+    const accountAfter = await prisma.paperAccount.findUnique({ where: { id: accountId } });
+    const ledgersAfter = await prisma.cashLedgerEntry.findMany({ where: { accountId } });
+    const auditsAfter = await prisma.paperAuditLog.count({ where: { accountId } });
+    expect(accountAfter!.availableCashFen).toBe(accountBefore!.availableCashFen);
+    expect(ledgersAfter.length).toBe(ledgersBefore.length);
+    expect(auditsAfter).toBe(auditsBefore);
+  });
+
   // Ownership protection
   it("does not create new-account-default settings", async () => {
     const task9Owned = await prisma.paperAccountSettingsVersion.findMany({

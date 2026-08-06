@@ -38,6 +38,16 @@ function isSafeNonNegativeInteger(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
+const SQLITE_INT64_MIN = BigInt("-9223372036854775808");
+const SQLITE_INT64_MAX = BigInt("9223372036854775807");
+
+function assertSignedSqliteInt64(value: bigint): bigint {
+  if (value < SQLITE_INT64_MIN || value > SQLITE_INT64_MAX) {
+    throw new Error("PAPER_ACCOUNT_BIGINT_OUT_OF_RANGE");
+  }
+  return value;
+}
+
 export function createPaperAccountIntegrityService(
   unitOfWork: PaperAccountUnitOfWork,
 ): PaperAccountIntegrityService {
@@ -98,15 +108,20 @@ export function createPaperAccountIntegrityService(
 
       // 3-4 ── Ledger amount/balance
       let ledgerAmountInvalid = false;
+      let ledgerBalanceInvalid = false;
       let ledgerBalanceMismatch = false;
       let ledgerCashFen = BigInt("0");
 
       for (const entry of ledger) {
         if (isBigIntNonNegative(entry.amountFen)) {
-          if (entry.direction === ("credit" as CashLedgerDirection)) {
-            ledgerCashFen = assertSqliteInt64(ledgerCashFen + entry.amountFen);
-          } else {
-            ledgerCashFen = assertSqliteInt64(ledgerCashFen - entry.amountFen);
+          const nextLedgerCashFen =
+            entry.direction === ("credit" as CashLedgerDirection)
+              ? ledgerCashFen + entry.amountFen
+              : ledgerCashFen - entry.amountFen;
+          ledgerCashFen = assertSignedSqliteInt64(nextLedgerCashFen);
+
+          if (ledgerCashFen < BigInt("0")) {
+            ledgerBalanceInvalid = true;
           }
         } else {
           ledgerAmountInvalid = true;
@@ -122,6 +137,9 @@ export function createPaperAccountIntegrityService(
 
       if (ledgerAmountInvalid) {
         appends(issues, seen, "PAPER_ACCOUNT_LEDGER_AMOUNT_INVALID");
+      }
+      if (ledgerBalanceInvalid) {
+        appends(issues, seen, "PAPER_ACCOUNT_LEDGER_BALANCE_INVALID");
       }
       if (ledgerBalanceMismatch) {
         appends(issues, seen, "PAPER_ACCOUNT_LEDGER_BALANCE_MISMATCH");

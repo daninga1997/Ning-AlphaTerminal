@@ -396,4 +396,54 @@ describe("PaperAccountIntegrityService (unit)", () => {
     const svc = createPaperAccountIntegrityService(createFakeUnitOfWork(ctx));
     await expect(svc.checkPaperAccountIntegrity("account-1")).rejects.toThrow("READ_FAILED");
   });
+
+  it("reports a negative cumulative ledger balance instead of throwing", async () => {
+    const a = acct({ availableCashFen: BigInt("10000000"), frozenCashFen: BigInt("0"), cumulativeFeesFen: BigInt("0") });
+    const entries = [
+      ledgerEntry({ sequence: 1, direction: "debit", type: "cash_adjustment" as CashLedgerType, amountFen: BigInt("1"), balanceAfterFen: BigInt("-1") }),
+    ];
+    const ctx = fullFakeContext({
+      accounts: { findById: vi.fn().mockResolvedValue(a), findByKey: unexpectedRepositoryCall, create: unexpectedRepositoryCall, updateCash: unexpectedRepositoryCall },
+      settings: { findLatestByScope: vi.fn().mockResolvedValue(settings()), listByScope: unexpectedRepositoryCall, findByIdempotencyKey: unexpectedRepositoryCall, append: unexpectedRepositoryCall },
+      ledger: { findByIdempotencyKey: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue(entries), sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall },
+      positions: { findByAccountAndCode: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue([]), create: unexpectedRepositoryCall, updateWithVersion: unexpectedRepositoryCall },
+      fills: { findByOrderAndSequence: unexpectedRepositoryCall, listByOrder: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue([]), append: unexpectedRepositoryCall },
+    });
+    const svc = createPaperAccountIntegrityService(createFakeUnitOfWork(ctx));
+    const result = await svc.checkPaperAccountIntegrity("account-1");
+
+    expect(result.valid).toBe(false);
+    expect(result.ledgerCashFen).toBe(BigInt("-1"));
+    expect(result.cachedCashFen).toBe(BigInt("10000000"));
+    expect(result.issues).toContain("PAPER_ACCOUNT_LEDGER_BALANCE_INVALID");
+    expect(result.issues).toContain("CASH_CACHE_MISMATCH");
+    expect(result.issues).not.toContain("PAPER_ACCOUNT_LEDGER_BALANCE_MISMATCH");
+    expect(result.issues).not.toContain("PAPER_ACCOUNT_LEDGER_AMOUNT_INVALID");
+    expect(result.issues.filter((i) => i === "PAPER_ACCOUNT_LEDGER_BALANCE_INVALID")).toHaveLength(1);
+  });
+
+  it("continues checking later entries after the ledger balance becomes negative", async () => {
+    const a = acct({ availableCashFen: BigInt("3"), frozenCashFen: BigInt("0"), cumulativeFeesFen: BigInt("0") });
+    const entries = [
+      ledgerEntry({ sequence: 1, direction: "credit", amountFen: BigInt("5"), balanceAfterFen: BigInt("5") }),
+      ledgerEntry({ sequence: 2, direction: "debit", amountFen: BigInt("10"), balanceAfterFen: BigInt("-5") }),
+      ledgerEntry({ sequence: 3, direction: "credit", amountFen: BigInt("8"), balanceAfterFen: BigInt("3") }),
+    ];
+    const ctx = fullFakeContext({
+      accounts: { findById: vi.fn().mockResolvedValue(a), findByKey: unexpectedRepositoryCall, create: unexpectedRepositoryCall, updateCash: unexpectedRepositoryCall },
+      settings: { findLatestByScope: vi.fn().mockResolvedValue(settings()), listByScope: unexpectedRepositoryCall, findByIdempotencyKey: unexpectedRepositoryCall, append: unexpectedRepositoryCall },
+      ledger: { findByIdempotencyKey: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue(entries), sumByAccount: unexpectedRepositoryCall, append: unexpectedRepositoryCall },
+      positions: { findByAccountAndCode: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue([]), create: unexpectedRepositoryCall, updateWithVersion: unexpectedRepositoryCall },
+      fills: { findByOrderAndSequence: unexpectedRepositoryCall, listByOrder: unexpectedRepositoryCall, listByAccount: vi.fn().mockResolvedValue([]), append: unexpectedRepositoryCall },
+    });
+    const svc = createPaperAccountIntegrityService(createFakeUnitOfWork(ctx));
+    const result = await svc.checkPaperAccountIntegrity("account-1");
+
+    expect(result.valid).toBe(false);
+    expect(result.ledgerCashFen).toBe(BigInt("3"));
+    expect(result.cachedCashFen).toBe(BigInt("3"));
+    expect(result.issues).toContain("PAPER_ACCOUNT_LEDGER_BALANCE_INVALID");
+    expect(result.issues).not.toContain("CASH_CACHE_MISMATCH");
+    expect(result.issues).not.toContain("PAPER_ACCOUNT_LEDGER_BALANCE_MISMATCH");
+  });
 });
