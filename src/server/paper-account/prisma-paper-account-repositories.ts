@@ -93,8 +93,14 @@ function assertTradingDate(value: string): string {
   return value;
 }
 
-function assertSafeInteger(value: number): void {
-  if (!Number.isSafeInteger(value)) {
+function assertSafeNonNegativeInteger(value: number): void {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error("PAPER_ACCOUNT_INTEGER_INVALID");
+  }
+}
+
+function assertSafePositiveInteger(value: number): void {
+  if (!Number.isSafeInteger(value) || value <= 0) {
     throw new Error("PAPER_ACCOUNT_INTEGER_INVALID");
   }
 }
@@ -314,9 +320,15 @@ function mapWorkerLease(value: WorkerLease): WorkerLeaseRecord {
   };
 }
 
-function assertInputIntegers(values: number[]): void {
+function assertInputNonNegativeIntegers(values: number[]): void {
   for (const value of values) {
-    assertSafeInteger(value);
+    assertSafeNonNegativeInteger(value);
+  }
+}
+
+function assertInputPositiveIntegers(values: number[]): void {
+  for (const value of values) {
+    assertSafePositiveInteger(value);
   }
 }
 
@@ -354,7 +366,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async updateCash(input: UpdatePaperAccountCashInput) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.expectedAccountVersion);
+        assertSafePositiveInteger(input.expectedAccountVersion);
         const data: Prisma.PaperAccountUpdateManyMutationInput = {
           availableCashFen: input.availableCashFen,
           frozenCashFen: input.frozenCashFen,
@@ -410,8 +422,8 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: PaperAccountSettingsVersionInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([
-          input.version,
+        assertSafePositiveInteger(input.version);
+        assertInputNonNegativeIntegers([
           input.commissionRatePpm,
           input.stampDutySellRatePpm,
           input.transferFeeRatePpm,
@@ -465,7 +477,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async create(input: CreatePaperPositionInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([
+        assertInputNonNegativeIntegers([
           input.totalQuantity,
           input.sellableQuantity,
           input.frozenQuantity,
@@ -475,12 +487,12 @@ export function createPrismaPaperAccountRepositories(
       },
       async updateWithVersion(input: UpdatePaperPositionInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([
+        assertInputNonNegativeIntegers([
           input.totalQuantity,
           input.sellableQuantity,
           input.frozenQuantity,
-          input.expectedVersion,
         ]);
+        assertSafePositiveInteger(input.expectedVersion);
         const result = await client.paperPosition.updateMany({
           where: { id: input.positionId, version: input.expectedVersion },
           data: {
@@ -528,8 +540,8 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: CreatePaperLotInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([
-          input.acquiredSequence,
+        assertSafePositiveInteger(input.acquiredSequence);
+        assertInputNonNegativeIntegers([
           input.originalQuantity,
           input.remainingQuantity,
         ]);
@@ -540,7 +552,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async updateRemainingQuantity(input) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([input.remainingQuantity, input.expectedRemainingQuantity]);
+        assertInputNonNegativeIntegers([input.remainingQuantity, input.expectedRemainingQuantity]);
         const result = await client.paperLot.updateMany({
           where: {
             id: input.lotId,
@@ -583,7 +595,8 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: CreatePaperOrderInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([input.quantity, input.settingsVersion]);
+        assertSafeNonNegativeInteger(input.quantity);
+        assertSafePositiveInteger(input.settingsVersion);
         try {
           const created = await client.paperOrder.create({
             data: {
@@ -617,7 +630,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async updateStatusWithVersion(input: UpdatePaperOrderStatusInput) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.expectedVersion);
+        assertSafePositiveInteger(input.expectedVersion);
         const data: Prisma.PaperOrderUpdateManyMutationInput = {
           status: input.toStatus,
           version: { increment: 1 },
@@ -659,7 +672,7 @@ export function createPrismaPaperAccountRepositories(
     fills: {
       async findByOrderAndSequence(orderId, sequence) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(sequence);
+        assertSafePositiveInteger(sequence);
         const found = await client.paperFill.findUnique({
           where: { orderId_sequence: { orderId, sequence } },
         });
@@ -683,7 +696,8 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: CreatePaperFillInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([input.sequence, input.quantity]);
+        assertSafePositiveInteger(input.sequence);
+        assertSafeNonNegativeInteger(input.quantity);
         assertTradingDate(input.tradingDate);
         const created = await client.paperFill.create({
           data: { ...input, executedAt: parseIsoDateTime(input.executedAt) },
@@ -725,7 +739,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: CashLedgerEntryInput) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.sequence);
+        assertSafePositiveInteger(input.sequence);
         try {
           const created = await client.cashLedgerEntry.create({
             data: { ...input, occurredAt: parseIsoDateTime(input.occurredAt) },
@@ -758,7 +772,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: CreateExitRuleInput) {
         assertTransactionScopeActive(scope);
-        assertInputIntegers([input.version, input.settingsVersion]);
+        assertInputPositiveIntegers([input.version, input.settingsVersion]);
         try {
           const created = await client.exitRule.create({
             data: {
@@ -787,7 +801,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async supersede(input) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.expectedVersion);
+        assertSafePositiveInteger(input.expectedVersion);
         const result = await client.exitRule.updateMany({
           where: {
             id: input.ruleId,
@@ -826,7 +840,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async append(input: PaperAuditLogInput) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.sequence);
+        assertSafePositiveInteger(input.sequence);
         try {
           const created = await client.paperAuditLog.create({
             data: { ...input, occurredAt: parseIsoDateTime(input.occurredAt) },
@@ -886,7 +900,7 @@ export function createPrismaPaperAccountRepositories(
           }
         }
 
-        assertSafeInteger(input.expectedVersion);
+        assertSafePositiveInteger(input.expectedVersion);
         const result = await client.paperWorkerState.updateMany({
           where: {
             accountId: input.accountId,
@@ -973,7 +987,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async heartbeat(input) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.expectedVersion);
+        assertSafePositiveInteger(input.expectedVersion);
         const result = await client.workerLease.updateMany({
           where: {
             leaseKey: input.leaseKey,
@@ -999,7 +1013,7 @@ export function createPrismaPaperAccountRepositories(
       },
       async release(input) {
         assertTransactionScopeActive(scope);
-        assertSafeInteger(input.expectedVersion);
+        assertSafePositiveInteger(input.expectedVersion);
         const releasedAt = parseIsoDateTime(input.releasedAt);
         const result = await client.workerLease.updateMany({
           where: {
